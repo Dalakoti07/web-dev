@@ -1,0 +1,16 @@
+:root { 
+    --color: blue;
+ }
+ 
+div { 
+    --color: green; 
+}
+  
+#alert { 
+    --color: red; 
+}
+ 
+/*use the variable on all elements*/
+* { 
+    color: var(--color); 
+}

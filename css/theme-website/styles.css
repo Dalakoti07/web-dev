@@ -1,0 +1,12 @@
+body {
+    background-color: var(--bg, white);
+    color: var(--bg-text, black)
+  }
+  article {
+    padding: 50px
+  }
+  article h2 {
+    margin-top: 100px;
+  }
+  
+  

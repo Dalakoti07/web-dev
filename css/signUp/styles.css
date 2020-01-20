@@ -1,0 +1,94 @@
+body {
+	background-color: #BDF1F6;
+  height: 100vh;
+  width: 100vw;
+    /* giving super powers of flex box to body so that all items whithin it are centered */
+  /* now body has become flex container */
+  display: flex;
+  color: rgba(66,66,66 ,1);
+  justify-content: center;
+  align-items: center;
+  font-family: 'Montserrat', sans-serif;
+  overflow-x: hidden;
+  overflow-y: hidden;
+}
+
+main {
+  width: 75%;
+  /* margin: 0 auto; this line for center alignment no longer needed as we have flex box in parent properties */
+  background-color: #F2FCFC;
+  /* lets make main also a flex container */
+  display: flex;
+
+  /* A quick trick is, if you need elements to align side by side, you may want to consider wrapping them in a flex container. 
+  i.e an element for which display: flex has been set. */
+  border-radius: 15px; 
+  box-sizing: border-box;
+}
+
+img{
+    /* reduce the width of image (setting the width to 100px has made image small )and set round corners */
+    width: 100px;
+    border-radius: 50%;
+    /* margin: 0 auto; this wont work as discussed below */
+    /* In CSS, most elements are categorized as either block or inline elements. 
+    This isn’t there for decoration. They really affect the default way the elements behave in browsers. ,to get this working we need to specify that display type is block*/
+    /* By default, images are not block elements! They aren’t */
+    display: block;
+    margin: 0 auto;
+}
+
+form {
+    width: 60%;
+    margin: 0 auto;
+  padding: 70px 50px;
+}
+
+section{
+    width: 40%;
+    text-align: center;
+    padding: 70px 50px;
+}
+/* 
+Block Elements way of doing work
+Block elements honour all margin and padding properties
+Block elements will expand in height to fit everything they contain. For example, a div will expand to contain any amount of text and images within it (in most cases)
+Block elements do not honour the CSS vertical-align property
+
+Inline Elements way of doing work
+Inline elements ignore any top and bottom margins applied
+Inline elements will disregard any height and width property values
+These will honour the CSS vertical-align property
+Inline elements only take up the space they need, and do not force a line break
+ */
+p{
+    line-height: 1.8;
+}
+
+/* completing the form and styling form */
+form + h3{
+    text-transform: uppercase;
+    font-weight: bold;
+}
+
+.divider {
+    width: 2px;
+    margin: 5rem 0;
+    background: rgb(171, 171, 177);
+  }
+  
+input[type=email], input[type=password]{
+    width: 100%;
+    padding: 1rem;
+    display: block;
+    margin-bottom: 2rem;
+}
+
+#submitBtn{
+    display: block;
+    margin-top: 2rem;
+    border-radius: 12px;
+    padding: 10px;
+    background-color: rgb(50, 50, 153);
+    color: rgb(235, 235, 235);
+}

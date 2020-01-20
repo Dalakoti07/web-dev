@@ -1,0 +1,34 @@
+.btn {
+    padding: 2rem 4rem;
+    border: 2px solid var(--color, black);
+    background: transparent;
+    font-size: 0.6em;
+    border-radius: 2px;
+  }
+  .btn:hover {
+    cursor: pointer;
+    background: var(--color, black);
+    color: white;
+  }
+  
+  
+  /* variations */
+  
+  .btn.red {
+    --color: red
+  }
+  .btn.yellow {
+    --color: yellow
+  }
+  .btn.green {
+    --color: green
+  }
+  .btn.blue {
+    --color: blue
+  }
+  .btn.orange {
+    --color: orange
+  }
+  
+  
+  

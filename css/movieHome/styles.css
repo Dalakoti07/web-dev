@@ -1,0 +1,29 @@
+.movie {
+  width: 100%;
+  /* using background shorthand property we have  and declaring two images in one html element , in this shorthand notation regarding bg is 
+  like UPS ROCA, where we have url, position,size ,repeat, origin, clip, attachment*/
+  background: url("http://i.imgur.com/lcm5byq.png") 20px 20px/ 150px 218px no-repeat, 
+    					url("http://i.imgur.com/2tiJEnP.png") 0% 0%/cover;
+  padding: 20px 20px 20px 190px;
+  /* to not increase the size of box with margin and padding we use below property, otherwise box size increases with margin and padding */
+  box-sizing: border-box;
+}
+h1{
+    color: white;
+}
+h1+p{
+    color: white;
+    font-size: 1.5em;
+}
+.movie__button {
+    display: block;
+    color: #fff;
+    font-size: 0.7em;
+    padding: 13px;
+    background-color: #EB383B;
+    margin-top: 40px;
+    border: 0; /* or use, NONE*/
+    /* display: block By default, buttons are inline elements. These elements do NOT force a line break in the document. 
+    Since, block-level elements will force a line break and drop to the next line in the document, I used display: block to drop the button to a new line. */
+  }
+  
