@@ -1,1 +1,1 @@
-This contain code snippet for html
+This contain code snippet for html, css and javascript
