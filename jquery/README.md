@@ -47,4 +47,4 @@
 
 ![image](/jquery/images/22.png)
 
-## JQuery 
+### [JQuery](/jquery/code)

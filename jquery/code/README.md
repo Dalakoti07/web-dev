@@ -1,5 +1,4 @@
 
-
 ![image](/jquery/j-query-images/00.png)
 
 ![image](/jquery/j-query-images/01.png)
