@@ -1,6 +1,6 @@
 1. Javascript provide typeof operator
 
-```
+```js
 var a;
 typeof a;				// "undefined"
 
@@ -30,7 +30,7 @@ typeof null is an interesting case, because it errantly returns "object", when y
 
 Also, note a = undefined. We're explicitly setting a to the undefined value, but that is behaviorally no different from a variable that has no value set yet, like with the var a; line at the top of the snippet. A variable can get to this "undefined" value state in several different ways, including functions that return no values and usage of the void operator.
 2. An array is an object that holds values (of any type) not particularly in named properties/keys, but rather in numerically indexed positions. For example:
-```
+```js
 var arr = [
 	"hello world",
 	42,
@@ -84,7 +84,7 @@ There are four equality operators: ==, ===, !=, and !==. The ! forms are of cour
 The difference between == and === is usually characterized that == checks for value equality and === checks for both value and type equality. However, this is inaccurate. The proper way to characterize them is that == checks for value equality with coercion allowed, and === checks for value equality without allowing coercion; === is often called "strict equality" for this reason.
 
 Consider the implicit coercion that's allowed by the == loose-equality comparison and not allowed with the === strict-equality:
-```
+```js
 var a = "42";
 var b = 42;
 
@@ -94,7 +94,7 @@ a === b;		// false
 
 <b>For example</b>, arrays are by default coerced to strings by simply joining all the values with commas (,) in between. You might think that two arrays with the same contents would be == equal, but they're not:
 
-```
+```js
 var a = [1,2,3];
 var b = [1,2,3];
 var c = "1,2,3";
@@ -105,7 +105,7 @@ a == b;		// false
 ```
 
 One more example 
-```
+```js
 "saurabh"<"saw"; // true
 var a = 41;
 var b = "42";
@@ -116,7 +116,7 @@ b < c;		// true
 ```
 
 The biggest gotcha you may run into here with comparisons between potentially different value types -- remember, there are no "strict inequality" forms to use -- is when one of the values cannot be made into a valid number, such as:
-```
+```js
 var a = 42;
 var b = "foo";
 
@@ -129,7 +129,7 @@ Wait, how can all three of those comparisons be false? Because the b value is be
 The == comparison fails for a different reason. a == b could fail if it's interpreted either as 42 == NaN or "42" == "foo" -- as we explained earlier, the former is the case.
 
 6. Hoisting
-```
+```js
 var a = 2;
 
 foo();					// works because `foo()`
@@ -167,7 +167,7 @@ Not only will strict mode keep your code to a safer path, and not only will it m
 
 So far, we've discussed functions as the primary mechanism of scope in JavaScript. You recall typical function declaration syntax as follows:
 
-```
+```js
 function foo() {
 	// ..
 }
@@ -181,7 +181,7 @@ As such, a function value should be thought of as an expression, much like any o
 
 Consider:
 
-```
+```js
 var foo = function() {
 	// ..
 };
@@ -202,7 +202,7 @@ In the previous snippet, neither of the function expressions are executed -- we 
 
 There's another way to execute a function expression, which is typically referred to as an immediately invoked function expression (IIFE):
 
-```
+```js
 (function IIFE(){
 	console.log( "Hello!" );
 })();
@@ -215,7 +215,7 @@ The final () on the end of the expression -- the })(); line -- is what actually 
 
 That may seem strange, but it's not as foreign as first glance. Consider the similarities between foo and IIFE here:
 
-```
+```js
 function foo() { .. }
 
 // `foo` function reference expression,
@@ -231,7 +231,7 @@ As you can see, listing the (function IIFE(){ .. }) before its executing () is e
 
 Because an IIFE is just a function, and functions create variable scope, using an IIFE in this fashion is often used to declare variables that won't affect the surrounding code outside the IIFE:
 
-```
+```js
 var a = 42;
 
 (function IIFE(){
@@ -244,7 +244,7 @@ console.log( a );		// 42
 
 IIFEs can also have return values:
 
-```
+```js
 var x = (function IIFE(){
 	return 42;
 })();
@@ -263,7 +263,7 @@ You can think of closure as a way to "remember" and continue to access a functio
 
 Consider:
 
-```
+```js
 function makeAdder(x) {
 	// parameter `x` is an inner variable
 
@@ -278,7 +278,7 @@ function makeAdder(x) {
 ```
 
 The reference to the inner add(..) function that gets returned with each call to the outer makeAdder(..) is able to remember whatever x value was passed in to makeAdder(..). Now, let's use makeAdder(..):
-```
+```js
 // `plusOne` gets a reference to the inner `add(..)`
 // function with closure over the `x` parameter of
 // the outer `makeAdder(..)`
@@ -312,7 +312,7 @@ The most common usage of closure in JavaScript is the module pattern. Modules le
 
 Consider:
 
-```
+```js
 function User(){
 	var username, password;
 
@@ -364,7 +364,7 @@ It's important to realize that this does not refer to the function itself, as is
 
 Here's a quick illustration:
 
-```
+```js
 function foo() {
 	console.log( this.bar );
 }
@@ -409,7 +409,7 @@ The internal prototype reference linkage from one object to its fallback happens
 
 Consider:
 
-```
+```js
 var foo = {
 	a: 42
 };

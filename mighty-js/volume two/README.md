@@ -139,3 +139,74 @@ Both LHS and RHS reference look-ups start at the currently executing *Scope*, an
 Unfulfilled RHS references result in `ReferenceError`s being thrown. Unfulfilled LHS references result in an automatic, implicitly-created global of that name (if not in "Strict Mode" [^note-strictmode]), or a `ReferenceError` (if in "Strict Mode" [^note-strictmode]).
 
 
+## Lexical Scope
+
+Let's consider this block of code:
+```js
+function foo(a) {
+
+	var b = a * 2;
+
+	function bar(c) {
+		console.log( a, b, c );
+	}
+
+	bar(b * 3);
+}
+
+foo( 2 ); // 2 4 12
+```
+There are three nested scopes inherent in this code example. It may be helpful to think about these scopes as bubbles inside of each other.
+
+![image](fig2.png)
+
+
+## Cheating Lexical
+
+#### Eval()
+```js
+function foo(str, a) {
+	eval( str ); // cheating!
+	console.log( a, b );
+}
+
+var b = 2;
+
+foo( "var b = 3;", 1 ); // 1 3
+```
+
+### with
+```js
+function foo(obj) {
+	with (obj) {
+		a = 2;
+	}
+}
+
+var o1 = {
+	a: 3
+};
+
+var o2 = {
+	b: 3
+};
+
+foo( o1 );
+console.log( o1.a ); // 2
+
+foo( o2 );
+console.log( o2.a ); // undefined
+console.log( a ); // 2 -- Oops, leaked global!
+```
+
+## Review (TL;DR)
+
+Lexical scope means that scope is defined by author-time decisions of where functions are declared. The lexing phase of compilation is essentially able to know where and how all identifiers are declared, and thus predict how they will be looked-up during execution.
+
+Two mechanisms in JavaScript can "cheat" lexical scope: `eval(..)` and `with`. The former can modify existing lexical scope (at runtime) by evaluating a string of "code" which has one or more declarations in it. The latter essentially creates a whole new lexical scope (again, at runtime) by treating an object reference *as* a "scope" and that object's properties as scoped identifiers.
+
+The downside to these mechanisms is that it defeats the *Engine*'s ability to perform compile-time optimizations regarding scope look-up, because the *Engine* has to assume pessimistically that such optimizations will be invalid. Code *will* run slower as a result of using either feature. **Don't use them.**
+
+
+
+
