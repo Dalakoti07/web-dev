@@ -138,6 +138,7 @@ Both LHS and RHS reference look-ups start at the currently executing *Scope*, an
 
 Unfulfilled RHS references result in `ReferenceError`s being thrown. Unfulfilled LHS references result in an automatic, implicitly-created global of that name (if not in "Strict Mode" [^note-strictmode]), or a `ReferenceError` (if in "Strict Mode" [^note-strictmode]).
 
+<hr>
 
 ## Lexical Scope
 
@@ -206,6 +207,87 @@ Lexical scope means that scope is defined by author-time decisions of where func
 Two mechanisms in JavaScript can "cheat" lexical scope: `eval(..)` and `with`. The former can modify existing lexical scope (at runtime) by evaluating a string of "code" which has one or more declarations in it. The latter essentially creates a whole new lexical scope (again, at runtime) by treating an object reference *as* a "scope" and that object's properties as scoped identifiers.
 
 The downside to these mechanisms is that it defeats the *Engine*'s ability to perform compile-time optimizations regarding scope look-up, because the *Engine* has to assume pessimistically that such optimizations will be invalid. Code *will* run slower as a result of using either feature. **Don't use them.**
+
+<hr>
+
+## Scope From Functions
+Same as other languages.
+
+Function scope encourages the idea that all variables belong to the function, and can be used and reused throughout the entirety of the function (and indeed, accessible even to nested scopes). This design approach can be quite useful, and certainly can make full use of the "dynamic" nature of JavaScript variables to take on values of different types as needed.
+
+## Hiding In Plain Scope
+
+For example:
+```js
+function doSomething(a) {
+	b = a + doSomethingElse( a * 2 );
+
+	console.log( b * 3 );
+}
+
+function doSomethingElse(a) {
+	return a - 1;
+}
+
+var b;
+
+doSomething( 2 ); // 15
+```
+
+In this snippet, the b variable and the doSomethingElse(..) function are likely "private" details of how doSomething(..) does its job. Giving the enclosing scope "access" to b and doSomethingElse(..) is not only unnecessary but also possibly "dangerous", in that they may be used in unexpected ways, intentionally or not, and this may violate pre-condition assumptions of doSomething(..).
+
+A more "proper" design would hide these private details inside the scope of doSomething(..), such as:
+```js
+function doSomething(a) {
+	function doSomethingElse(a) {
+		return a - 1;
+	}
+
+	var b;
+
+	b = a + doSomethingElse( a * 2 );
+
+	console.log( b * 3 );
+}
+
+doSomething( 2 ); // 15
+```
+Now, b and doSomethingElse(..) are not accessible to any outside influence, instead controlled only by doSomething(..). The functionality and end-result has not been affected, but the design keeps private details private, which is usually considered better software.
+
+
+### Blocks As Scopes
+While functions are the most common unit of scope, and certainly the most wide-spread of the design approaches in the majority of JS in circulation, other units of scope are possible, and the usage of these other scope units can lead to even better, cleaner to maintain code.
+
+Many languages other than JavaScript support Block Scope, and so developers from those languages are accustomed to the mindset, whereas those who've primarily only worked in JavaScript may find the concept slightly foreign.
+```
+for (var i=0; i<10; i++) {
+	console.log( i );
+}
+
+console.log(i);// i=10
+```
+JS dont provide block scope, But, the sad reality is that, on the surface, JavaScript has no facility for block scope.
+
+### But let was introduced in EJS 6 and it introduced Block scope
+
+### const
+In addition to let, ES6 introduces const, which also creates a block-scoped variable, but whose value is fixed (constant). Any attempt to change that value at a later time results in an error.
+
+
+## Review (TL;DR)
+
+Functions are the most common unit of scope in JavaScript. Variables and functions that are declared inside another function are essentially "hidden" from any of the enclosing "scopes", which is an intentional design principle of good software.
+
+But functions are by no means the only unit of scope. Block-scope refers to the idea that variables and functions can belong to an arbitrary block (generally, any { .. } pair) of code, rather than only to the enclosing function.
+
+Starting with ES3, the try/catch structure has block-scope in the catch clause.
+
+In ES6, the let keyword (a cousin to the var keyword) is introduced to allow declarations of variables in any arbitrary block of code. if (..) { let a = 2; } will declare a variable a that essentially hijacks the scope of the if's { .. } block and attaches itself there.
+
+Though some seem to believe so, block scope should not be taken as an outright replacement of var function scope. Both functionalities co-exist, and developers can and should use both function-scope and block-scope techniques where respectively appropriate to produce better, more readable/maintainable code.
+
+
+<hr>
 
 
 
