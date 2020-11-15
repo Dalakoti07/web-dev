@@ -382,4 +382,194 @@ Be careful about duplicate declarations, especially mixed between normal var dec
 
 <hr>
 
+# Closures
+The enlightenment moment should be: oh, closures are already occurring all over my code, I can finally see them now. Understanding closures is like when Neo sees the Matrix for the first time.
+
+What I didn't know back then, what took me years to understand, and what I hope to impart to you presently, is this secret: closure is all around you in JavaScript, you just have to recognize and embrace it. Closures are not a special opt-in tool that you must learn new syntax and patterns for. 
+
+**Definition**
+
+>> Closure is when a function is able to remember and access its lexical scope even when that function is executing outside its lexical scope.
+
+Let us then consider code which brings closure into full light:
+
+```js
+function foo() {
+	var a = 2;
+
+	function bar() {
+		console.log( a );
+	}
+
+	return bar;
+}
+
+var baz = foo();
+
+baz(); // 2 -- Whoa, closure was just observed, man.
+```
+
+## Loops + Closure
+The most common canonical example used to illustrate closure involves the humble for-loop.
+
+```js
+for (var i=1; i<=5; i++) {
+	setTimeout( function timer(){
+		console.log( i );
+	}, i*1000 );
+}
+```
+
+The spirit of this code snippet is that we would normally expect for the behavior to be that the numbers "1", "2", .. "5" would be printed out, one at a time, one per second, respectively.
+
+The above code gives us five 6's.
+
+But this does not work, as when code is runned after 1 seconds then i has reached its final value which is 6.
+
+So to make it work we have to ensure that we have copy of each i in scope of timer, so how to make a different scope?
+
+We learned in Chapter 3 that the IIFE creates scope by declaring a function and immediately executing it. Let's try:
+
+```js
+for (var i=1; i<=5; i++) {
+	(function(){
+		setTimeout( function timer(){
+			console.log( i );
+		}, i*1000 );
+	})();
+}
+```
+
+Does that work? Try it. Again, I'll wait.
+
+I'll end the suspense for you. Nope. But why? We now obviously have more lexical scope. Each timeout function callback is indeed closing over its own per-iteration scope created respectively by each IIFE.
+
+It's not enough to have a scope to close over if that scope is empty. Look closely. Our IIFE is just an empty do-nothing scope. It needs something in it to be useful to us.
+
+It needs its own variable, with a copy of the i value at each iteration.
+
+```js
+for (var i=1; i<=5; i++) {
+	(function(){
+		var j = i;
+		setTimeout( function timer(){
+			console.log( j );
+		}, j*1000 );
+	})();
+}
+```
+
+A slight variation some prefer is:
+
+```js
+for (var i=1; i<=5; i++) {
+	(function(j){
+		setTimeout( function timer(){
+			console.log( j );
+		}, j*1000 );
+	})( i );
+}
+```
+
+**Block Scoping Revisited**
+```js
+for (var i=1; i<=5; i++) {
+	let j = i; // yay, block-scope for closure!
+	setTimeout( function timer(){
+		console.log( j );
+	}, j*1000 );
+}
+
+for (let i=1; i<=5; i++) {
+	setTimeout( function timer(){
+		console.log( i );
+	}, i*1000 );
+}
+```
+
+## Modern Modules (Important concept)
+
+Various module dependency loaders/managers essentially wrap up this pattern of module definition into a friendly API. Rather than examine any one particular library, let me present a very simple proof of concept for illustration purposes (only):
+
+```js
+var MyModules = (function Manager() {
+	var modules = {};
+
+	function define(name, deps, impl) {
+		for (var i=0; i<deps.length; i++) {
+			deps[i] = modules[deps[i]];
+		}
+		modules[name] = impl.apply( impl, deps );
+	}
+
+	function get(name) {
+		return modules[name];
+	}
+
+	return {
+		define: define,
+		get: get
+	};
+})();
+```
+
+The key part of this code is modules[name] = impl.apply(impl, deps). This is invoking the definition wrapper function for a module (passing in any dependencies), and storing the return value, the module's API, into an internal list of modules tracked by name.
+
+And here's how I might use it to define some modules:
+```js
+MyModules.define( "bar", [], function(){
+	function hello(who) {
+		return "Let me introduce: " + who;
+	}
+
+	return {
+		hello: hello
+	};
+} );
+
+MyModules.define( "foo", ["bar"], function(bar){
+	var hungry = "hippo";
+
+	function awesome() {
+		console.log( bar.hello( hungry ).toUpperCase() );
+	}
+
+	return {
+		awesome: awesome
+	};
+} );
+
+var bar = MyModules.get( "bar" );
+var foo = MyModules.get( "foo" );
+
+console.log(
+	bar.hello( "hippo" )
+); // Let me introduce: hippo
+
+foo.awesome(); // LET ME INTRODUCE: HIPPO
+```
+
+Both the "foo" and "bar" modules are defined with a function that returns a public API. "foo" even receives the instance of "bar" as a dependency parameter, and can use it accordingly.
+
+Spend some time examining these code snippets to fully understand the power of closures put to use for our own good purposes. The key take-away is that there's not really any particular "magic" to module managers. They fulfill both characteristics of the module pattern I listed above: invoking a function definition wrapper, and keeping its return value as the API for that module.
+
+In other words, modules are just modules, even if you put a friendly wrapper tool on top of them.
+
+
+## Review (TL;DR)
+Closure seems to the un-enlightened like a mystical world set apart inside of JavaScript which only the few bravest souls can reach. But it's actually just a standard and almost obvious fact of how we write code in a lexically scoped environment, where functions are values and can be passed around at will.
+
+**Closure is when a function can remember and access its lexical scope even when it's invoked outside its lexical scope.**
+
+Closures can trip us up, for instance with loops, if we're not careful to recognize them and how they work. But they are also an immensely powerful tool, enabling patterns like modules in their various forms.
+
+Modules require two key characteristics: 1) an outer wrapping function being invoked, to create the enclosing scope 2) the return value of the wrapping function must include reference to at least one inner function that then has closure over the private inner scope of the wrapper.
+
+Now we can see closures all around our existing code, and we have the ability to recognize and leverage them to our own benefit!
+
+#### Note : What is this .apply in object and then see the modern modules notes
+
+<hr>
+
+
 
