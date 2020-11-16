@@ -62,5 +62,124 @@ To learn `this`, you first have to learn what `this` is not, despite any assumpt
 
 <hr>
 
+## Determining this
+
+Now, we can summarize the rules for determining this from a function call's call-site, in their order of precedence. Ask these questions in this order, and stop when the first rule applies.
+
+1. Is the function called with new (new binding)? If so, this is the newly constructed object.
+
+    `var bar = new foo()`
+
+2. Is the function called with call or apply (explicit binding), even hidden inside a bind hard binding? If so, this is the explicitly specified object.
+    
+    `var bar = foo.call( obj2 )`
+
+3. Is the function called with a context (implicit binding), otherwise known as an owning or containing object? If so, this is that context object.
+
+    `var bar = obj1.foo()`
+
+4. Otherwise, default the this (default binding). If in strict mode, pick undefined, otherwise pick the global object.
+
+    `var bar = foo()`
+
+
+That's it. That's all it takes to understand the rules of this binding for normal function calls. Well... almost.
+
+## Lexical `this`
+
+Normal functions abide by the 4 rules we just covered. But ES6 introduces a special kind of function that does not use these rules: arrow-function.
+
+Arrow-functions are signified not by the `function` keyword, but by the `=>` so called "fat arrow" operator. Instead of using the four standard `this` rules, arrow-functions adopt the `this` binding from the enclosing (function or global) scope.
+
+Let's illustrate arrow-function lexical scope:
+
+```js
+function foo() {
+	// return an arrow function
+	return (a) => {
+		// `this` here is lexically adopted from `foo()`
+		console.log( this.a );
+	};
+}
+
+var obj1 = {
+	a: 2
+};
+
+var obj2 = {
+	a: 3
+};
+
+var bar = foo.call( obj1 );
+bar.call( obj2 ); // 2, not 3!
+```
+
+The arrow-function created in `foo()` lexically captures whatever `foo()`s `this` is at its call-time. Since `foo()` was `this`-bound to `obj1`, `bar` (a reference to the returned arrow-function) will also be `this`-bound to `obj1`. The lexical binding of an arrow-function cannot be overridden (even with `new`!).
+
+The most common use-case will likely be in the use of callbacks, such as event handlers or timers:
+
+```js
+function foo() {
+	setTimeout(() => {
+		// `this` here is lexically adopted from `foo()`
+		console.log( this.a );
+	},100);
+}
+
+var obj = {
+	a: 2
+};
+
+foo.call( obj ); // 2
+```
+
+While arrow-functions provide an alternative to using `bind(..)` on a function to ensure its `this`, which can seem attractive, it's important to note that they essentially are disabling the traditional `this` mechanism in favor of more widely-understood lexical scoping. Pre-ES6, we already have a fairly common pattern for doing so, which is basically almost indistinguishable from the spirit of ES6 arrow-functions:
+
+```js
+function foo() {
+	var self = this; // lexical capture of `this`
+	setTimeout( function(){
+		console.log( self.a );
+	}, 100 );
+}
+
+var obj = {
+	a: 2
+};
+
+foo.call( obj ); // 2
+```
+
+While `self = this` and arrow-functions both seem like good "solutions" to not wanting to use `bind(..)`, they are essentially fleeing from `this` instead of understanding and embracing it.
+
+If you find yourself writing `this`-style code, but most or all the time, you defeat the `this` mechanism with lexical `self = this` or arrow-function "tricks", perhaps you should either:
+
+1. Use only lexical scope and forget the false pretense of `this`-style code.
+
+2. Embrace `this`-style mechanisms completely, including using `bind(..)` where necessary, and try to avoid `self = this` and arrow-function "lexical this" tricks.
+
+A program can effectively use both styles of code (lexical and `this`), but inside of the same function, and indeed for the same sorts of look-ups, mixing the two mechanisms is usually asking for harder-to-maintain code, and probably working too hard to be clever.
+
+
+
+## Review (TL;DR)
+Determining the this binding for an executing function requires finding the direct call-site of that function. Once examined, four rules can be applied to the call-site, in this order of precedence:
+
+1. Called with new? Use the newly constructed object.
+
+2. Called with call or apply (or bind)? Use the specified object.
+
+3. Called with a context object owning the call? Use that context object.
+
+4. Default: undefined in strict mode, global object otherwise.
+
+Be careful of accidental/unintentional invoking of the default binding rule. In cases where you want to "safely" ignore a this binding, a "DMZ" object like ø = Object.create(null) is a good placeholder value that protects the global object from unintended side-effects.
+
+Instead of the four standard binding rules, ES6 arrow-functions use lexical scoping for this binding, which means they adopt the this binding (whatever it is) from its enclosing function call. They are essentially a syntactic replacement of self = this in pre-ES6 coding.
+
+[complete Code](ch2.md)
+
+<hr>
+
 
 
