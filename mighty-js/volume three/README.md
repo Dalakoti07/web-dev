@@ -225,7 +225,7 @@ In general, faking classes in JS often sets more landmines for future coding tha
 [full code](ch5.md)
 
 ## Review (TL;DR)
-When attempting a property access on an object that doesn't have that property, the object's internal [[Prototype]] linkage defines where the [[Get]] operation (see Chapter 3) should look next. This cascading linkage from object to object essentially defines a "prototype chain" (somewhat similar to a nested scope chain) of objects to traverse for property resolution.
+When attempting a property access on an object that doesn't have that property, the object's internal [[Prototype]] linkage defines where the `[[Get]]` operation (see Chapter 3) should look next. This cascading linkage from object to object essentially defines a "prototype chain" (somewhat similar to a nested scope chain) of objects to traverse for property resolution.
 
 All normal objects have the built-in Object.prototype as the top of the prototype chain (like the global scope in scope look-up), where property resolution will stop if not found anywhere prior in the chain. toString(), valueOf(), and several other common utilities exist on this Object.prototype object, explaining how all objects in the language are able to access them.
 
@@ -233,9 +233,105 @@ The most common way to get two objects linked to each other is using the new key
 
 The "another object" that the new object is linked to happens to be the object referenced by the arbitrarily named .prototype property of the function called with new. Functions called with new are often called "constructors", despite the fact that they are not actually instantiating a class as constructors do in traditional class-oriented languages.
 
-While these JavaScript mechanisms can seem to resemble "class instantiation" and "class inheritance" from traditional class-oriented languages, the key distinction is that in JavaScript, no copies are made. Rather, objects end up linked to each other via an internal [[Prototype]] chain.
+While these JavaScript mechanisms can seem to resemble "class instantiation" and "class inheritance" from traditional class-oriented languages, the key distinction is that in JavaScript, no copies are made. Rather, objects end up linked to each other via an internal `[[Prototype]]` chain.
 
 For a variety of reasons, not the least of which is terminology precedent, "inheritance" (and "prototypal inheritance") and all the other OO terms just do not make sense when considering how JavaScript actually works (not just applied to our forced mental models).
 
 Instead, "delegation" is a more appropriate term, because these relationships are not copies but delegation links.
+
+
+<hr>
+
+**Javascript dont have classes, but they have objects, cool! and annyoying**
+
+But, do we really need to model this problem with a parent Controller class, two child classes, and some composition? Is there a way to take advantage of OLOO-style behavior delegation and have a much simpler design? Yes!
+
+```js
+var LoginController = {
+	errors: [],
+	getUser: function() {
+		return document.getElementById( "login_username" ).value;
+	},
+	getPassword: function() {
+		return document.getElementById( "login_password" ).value;
+	},
+	validateEntry: function(user,pw) {
+		user = user || this.getUser();
+		pw = pw || this.getPassword();
+
+		if (!(user && pw)) {
+			return this.failure( "Please enter a username & password!" );
+		}
+		else if (pw.length < 5) {
+			return this.failure( "Password must be 5+ characters!" );
+		}
+
+		// got here? validated!
+		return true;
+	},
+	showDialog: function(title,msg) {
+		// display success message to user in dialog
+	},
+	failure: function(err) {
+		this.errors.push( err );
+		this.showDialog( "Error", "Login invalid: " + err );
+	}
+};
+
+// Link `AuthController` to delegate to `LoginController`
+var AuthController = Object.create( LoginController );
+
+AuthController.errors = [];
+AuthController.checkAuth = function() {
+	var user = this.getUser();
+	var pw = this.getPassword();
+
+	if (this.validateEntry( user, pw )) {
+		this.server( "/check-auth",{
+			user: user,
+			pw: pw
+		} )
+		.then( this.accepted.bind( this ) )
+		.fail( this.rejected.bind( this ) );
+	}
+};
+AuthController.server = function(url,data) {
+	return $.ajax( {
+		url: url,
+		data: data
+	} );
+};
+AuthController.accepted = function() {
+	this.showDialog( "Success", "Authenticated!" )
+};
+AuthController.rejected = function(err) {
+	this.failure( "Auth Failed: " + err );
+};
+```
+
+Since AuthController is just an object (so is LoginController), we don't need to instantiate (like new AuthController()) to perform our task. All we need to do is:
+
+```js
+AuthController.checkAuth();
+```
+
+Of course, with OLOO, if you do need to create one or more additional objects in the delegation chain, that's easy, and still doesn't require anything like class instantiation:
+
+```js
+var controller1 = Object.create( AuthController );
+var controller2 = Object.create( AuthController );
+```
+
+[full-code](ch6.md)
+
+## Review (TL;DR)
+Classes and inheritance are a design pattern you can choose, or not choose, in your software architecture. Most developers take for granted that classes are the only (proper) way to organize code, but here we've seen there's another less-commonly talked about pattern that's actually quite powerful: behavior delegation.
+
+Behavior delegation suggests objects as peers of each other, which delegate amongst themselves, rather than parent and child class relationships. JavaScript's `[[Prototype]]` mechanism is, by its very designed nature, a behavior delegation mechanism. That means we can either choose to struggle to implement class mechanics on top of JS (see Chapters 4 and 5), or we can just embrace the natural state of `[[Prototype]]` as a delegation mechanism.
+
+When you design code with objects only, not only does it simplify the syntax you use, but it can actually lead to simpler code architecture design.
+
+OLOO (objects-linked-to-other-objects) is a code style which creates and relates objects directly without the abstraction of classes. OLOO quite naturally implements `[[Prototype]]`-based behavior delegation.
+
+
 
