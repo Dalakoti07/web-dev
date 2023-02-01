@@ -15,9 +15,6 @@ window.onload = function () {
 
     followEllipticalPath()
 
-    /**
-     * this function will bounce the ball
-     */
     function followEllipticalPath() {
         context.clearRect(0, 0, width, height);
         x = centerX + Math.cos(angle) * radiusX

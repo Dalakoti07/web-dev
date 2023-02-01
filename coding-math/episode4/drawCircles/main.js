@@ -1,3 +1,6 @@
+/**
+ * This is the same thing I did in kotlin 1 year ago
+ */
 window.onload = function () {
 
     var canvas = document.getElementById("canvas"),
@@ -8,14 +11,14 @@ window.onload = function () {
     var centerY = height * 0.5,
         centerX = width * 0.5,
         radius = 200,
-        speed = 0.1,
         angle = 0,
         x, y;
 
-    followCirclePath()
+    var circleCount = 40
+    var slices = 2*Math.PI / circleCount
 
-    function followCirclePath() {
-        context.clearRect(0, 0, width, height);
+    for(var i = 0; i<circleCount; i++){
+        angle = i* slices;
         x = centerX + Math.cos(angle) * radius
         y = centerY + Math.sin(angle) * radius
 
@@ -24,9 +27,6 @@ window.onload = function () {
         // create circle
         context.arc(x, y, 10, 0, 2 * Math.PI, false);
         context.fill();
-
-        angle += speed;
-        requestAnimationFrame(followCirclePath);
     }
 
 }
