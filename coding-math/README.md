@@ -14,3 +14,5 @@ episode 12 - edge Handling
     - remove them from array so that computation is not wasted
     - regenerate to show fountain like effect
     - bouncing and bouncing with energy loss
+episode 13 - friction implemented in 2 ways; using vector; using multiplication
+    - 
