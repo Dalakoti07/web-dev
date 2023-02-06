@@ -15,4 +15,10 @@ episode 12 - edge Handling
     - regenerate to show fountain like effect
     - bouncing and bouncing with energy loss
 episode 13 - friction implemented in 2 ways; using vector; using multiplication
-    - 
+episode 14 - collision detection in 
+    - circle circle
+    - circle point
+    - rect point
+    - rect rect 
+episode 15 - 
+
