@@ -21,4 +21,10 @@ episode 14 - collision detection in
     - rect point
     - rect rect 
 episode 15 - 
+    - spring motion where spring would be at center of screen but mass would be assigned to any random position in space
+    - added mouse event such that on mouse location ,new spring location is decided 
+episode 16 -
+    - spring advance example
+
+
 
