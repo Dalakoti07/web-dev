@@ -37,6 +37,9 @@ episode 20 -
     point approach)
 episode 21:
     - bitmap collision detection
+episode 22
+    - 3d gallery
+    - 3d coming alphabets
 
 
 
