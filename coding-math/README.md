@@ -25,11 +25,9 @@ episode 15 -
     - added mouse event such that on mouse location ,new spring location is decided 
 episode 16 -
     - spring advance example
-episode 18: refactoring the code for particle js
+episode 18 - refactoring the code for particle js
     - mass bounded with more than 1 spring
     - 100 particles are gravitated toward 2 sun like objects
-
-
-
-
+episode 19 - bezier curve examples
+episode 20 - multi-points bezier curve, means having 5 points
 
