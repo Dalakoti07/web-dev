@@ -29,5 +29,10 @@ episode 18 - refactoring the code for particle js
     - mass bounded with more than 1 spring
     - 100 particles are gravitated toward 2 sun like objects
 episode 19 - bezier curve examples
-episode 20 - multi-points bezier curve, means having 5 points
+episode 20 - 
+    - touch top of curve
+    - multi-points bezier curve, means having n points where n>3 (idea is to create curves in parts, using mid points)
+    - difference between bezier curve and our multi curve
+episode 21 -
+    - 
 
