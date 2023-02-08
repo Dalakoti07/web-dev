@@ -40,6 +40,10 @@ episode 21:
 episode 22
     - 3d gallery
     - 3d coming alphabets
+episode 23
+    - some of the z axis transition was flaky and thats why we sorted it
+    - bubble effect
+    - spiral animation
 
 
 
