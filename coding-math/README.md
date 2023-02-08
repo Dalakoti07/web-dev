@@ -25,8 +25,11 @@ episode 15 -
     - added mouse event such that on mouse location ,new spring location is decided 
 episode 16 -
     - spring advance example
-episode 17 -
-    - 
+episode 18: refactoring the code for particle js
+    - mass bounded with more than 1 spring
+    - 100 particles are gravitated toward 2 sun like objects
+
+
 
 
 
