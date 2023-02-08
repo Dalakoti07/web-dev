@@ -32,7 +32,11 @@ episode 19 - bezier curve examples
 episode 20 - 
     - touch top of curve
     - multi-points bezier curve, means having n points where n>3 (idea is to create curves in parts, using mid points)
-    - difference between bezier curve and our multi curve
-episode 21 -
-    - 
+    - difference between bezier curve and our multi curve (which says that always use bezier curve 
+    function when having 4 points and because that curve would be more accurate as compare to our approach of using mid
+    point approach)
+episode 21:
+    - bitmap collision detection
+
+
 
