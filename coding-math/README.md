@@ -44,6 +44,9 @@ episode 23
     - some of the z axis transition was flaky and thats why we sorted it
     - bubble effect
     - spiral animation
-
+episode 24
+    - 3d spiral
+episode 25
+    - 3d square which will translate
 
 
