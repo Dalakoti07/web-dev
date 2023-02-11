@@ -48,5 +48,14 @@ episode 24
     - 3d spiral
 episode 25
     - 3d square which will translate
+episode 26
+    - 3d rotation of cube
+episode 27
+    - implement tweening using paradox 
+episode 28
+    - 
 
+### Challenges
+- can you make episode 25 demo such that when you change mouse pointer then cube rotates
+- 
 
