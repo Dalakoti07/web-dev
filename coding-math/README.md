@@ -51,7 +51,7 @@ episode 25
 episode 26
     - 3d rotation of cube
 episode 27
-    - implement tweening using paradox 
+    - implement easing using paradox 
 episode 28
     - 
 
