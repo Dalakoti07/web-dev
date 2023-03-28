@@ -22,11 +22,27 @@ function mapFunction(chunk, callback) {
 }
 
 // Reduce function - takes a key (word) and a list of values (counts) and sums the counts
-function SaurabhreduceFunction(word, counts, callback) {
+// from chatgpt
+// function SaurabhreduceFunction(word, counts, callback) {
     
-  const totalCount = counts.reduce((sum, count) => sum + count, 0);
-//   console.log("total count: ", totalCount);
-  callback(null, `${word}: ${totalCount}\n`);
+//   const totalCount = counts.reduce((sum, count) => sum + count, 0);
+// //   console.log("total count: ", totalCount);
+//   callback(null, `${word}: ${totalCount}\n`);
+// }
+
+
+function SaurabhreduceFunction(wordList, finalList, callback){
+    finalList = wordList.reduce((wordCounts, word)=>{
+        const index = wordCounts.findIndex(item => item.word === word.word);
+        if (index === -1) {
+            wordCounts.push(word);
+        } else {
+            wordCounts[index].count += word.count;
+        }
+        return wordCounts;
+    },[])
+    // callback(null, wordList);
+    return finalList;
 }
 
 // Function to read a chunk of the input file
@@ -98,8 +114,8 @@ function frequencyCount(inputFile, outputFile, chunkSize, numWorkers) {
 
     function getChunkArrayForWorker(workerIdx, cl){
         chunkName = [workerIdx];
-        for(i=1; i<cl;i++){
-            chunkName.push(i*numWorkers + workerIdx);
+        for(j=1; j<cl;j++){
+            chunkName.push(j*numWorkers + workerIdx);
         }
         return chunkName;
     }
@@ -110,15 +126,28 @@ function frequencyCount(inputFile, outputFile, chunkSize, numWorkers) {
       if (error) {
         callback(error);
       } else {
-        console.log("results: ", results);
-        reduce(Object.entries(Object.assign({}, ...results)),{}, SaurabhreduceFunction, callback);
+        console.log("intermediate results: ", typeof results);
+
+        /*
+        fs.writeFile(`./intermediate${i}.txt`, JSON.stringify(results, null, 2), error => {
+            if (error) {
+              console.error('error: ',error);
+            } else {
+              console.log('Done!');
+            }
+          });
+          */
+
+        reduce(Object.entries(results),{}, SaurabhreduceFunction, callback);
       }
     });
   }), (error, results) => {
     if (error) {
         console.error('error at line 113: ',error);
     } else {
-      fs.writeFile(outputFile, results.join(''), error => {
+        console.log("results: ", results);
+        console.log("final results: ", typeof results);
+      fs.writeFile(outputFile, JSON.stringify(results,null,2), error => {
         if (error) {
           console.error('error: ',error);
         } else {
