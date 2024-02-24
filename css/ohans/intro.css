@@ -1,0 +1,103 @@
+*, *::before, *::after {
+    margin: 0;
+    padding: 0;
+    /* You may also want to set box-sizing to border-box so that element widths and heights include padding and border */
+    box-sizing: border-box;
+}
+
+.container {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    grid-template-rows: auto;
+    width: 100%;
+    height: 100vh;
+    grid-template-areas:
+    "header header header header"
+    "main main . sidebar"
+    "footer footer footer footer";
+    column-gap: 10px;
+    row-gap: 10px;
+}
+
+.item-a {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    grid-area: header;
+    background-color: rgba(249, 149, 67, 0.5);
+    border-radius: 5px;
+}
+
+.item-b {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    grid-area: main;
+    background-color: rgba(72, 191, 231, 0.5);
+    border-radius: 5px;
+}
+
+.nav-container {
+    width: 100%;
+    display: flex;
+    flex-direction: column;
+}
+
+.item-c {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    grid-area: sidebar;
+    background-color: rgba(236, 115, 116, 0.5);
+    border-radius: 5px;
+}
+
+.nav-item {
+    background-color: white;
+    padding: 10px;
+    margin: 10px;
+    border-radius: 2px;
+    overflow: hidden;
+}
+
+.item-d {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    grid-area: footer;
+    background-color: rgba(118, 198, 121, 0.5);
+    border-radius: 5px;
+}
+
+/*mobile*/
+@media screen and (max-width: 480px) {
+    .container {
+        grid-template-columns: 1fr;
+        grid-template-areas:
+            "header"
+            "sidebar"
+            "main "
+            "footer";
+        column-gap: 2px;
+        row-gap: 2px;
+    }
+}
+
+/*tablets*/
+@media screen and (max-width: 768px) {
+    .container {
+        grid-template-columns: 1fr;
+        grid-template-areas:
+            "sidebar"
+            "header"
+            "main "
+            "footer";
+    }
+
+}
+
+* {
+    outline: 1px solid red;
+}
+
