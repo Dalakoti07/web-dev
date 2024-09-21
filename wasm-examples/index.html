@@ -1,0 +1,46 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>WebAssembly Image Processing</title>
+</head>
+<body>
+<input type="file" id="upload" />
+<canvas id="canvas"></canvas>
+<script src="image_processing.js"></script>
+<script>
+    // Wait for the WebAssembly module to be ready
+    const Module = {
+        onRuntimeInitialized: () => {
+            document.getElementById('upload').addEventListener('change', event => {
+                const file = event.target.files[0];
+                const reader = new FileReader();
+
+                reader.onload = function(event) {
+                    const img = new Image();
+                    img.onload = function() {
+                        const canvas = document.getElementById('canvas');
+                        const ctx = canvas.getContext('2d');
+                        canvas.width = img.width;
+                        canvas.height = img.height;
+                        ctx.drawImage(img, 0, 0);
+
+                        // Get image data
+                        const imageData = ctx.getImageData(0, 0, canvas.width, canvas.height);
+                        const data = new Uint8Array(imageData.data.buffer);
+
+                        // Call the WebAssembly function
+                        Module.ccall('grayscale', null, ['array', 'number', 'number'], [data, canvas.width, canvas.height]);
+
+                        // Put image data back
+                        const newImageData = new ImageData(new Uint8ClampedArray(data.buffer), canvas.width, canvas.height);
+                        ctx.putImageData(newImageData, 0, 0);
+                    };
+                    img.src = event.target.result;
+                };
+                reader.readAsDataURL(file);
+            });
+        }
+    };
+</script>
+</body>
+</html>
