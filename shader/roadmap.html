@@ -1,0 +1,815 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Shader Roadmap — frozen v1.0</title>
+<style>
+/* ── tokens: light is the base, both dark states redefine only these ───────── */
+:root{
+  --paper:#F2F4F6; --surface:#FFFFFF; --surface-2:#E9EDF1; --line:#D5DCE3;
+  --ink:#12161B; --ink-2:#4A5560; --ink-3:#77838F;
+  --bolt:#C4541F; --bolt-soft:#F6E6DC;
+  --fifty:#1F6FB2; --fifty-soft:#DDE9F4;
+  --ok:#2E7D6B; --ok-soft:#DCEBE7;
+  --warn:#9A6B00;
+  --shadow:0 1px 2px rgba(18,22,27,.06), 0 4px 16px rgba(18,22,27,.05);
+  --mono:ui-monospace,SFMono-Regular,"SF Mono",Menlo,Consolas,monospace;
+  --sans:ui-sans-serif,-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif;
+}
+@media (prefers-color-scheme:dark){
+  :root:not([data-theme="light"]){
+    --paper:#0E1216; --surface:#161B21; --surface-2:#1E252D; --line:#2C353F;
+    --ink:#E4E8EC; --ink-2:#A2AEBA; --ink-3:#6F7C89;
+    --bolt:#E8874A; --bolt-soft:#2E2018;
+    --fifty:#63A9DE; --fifty-soft:#152431;
+    --ok:#4FB79E; --ok-soft:#13261F;
+    --warn:#C9994A;
+    --shadow:0 1px 2px rgba(0,0,0,.4), 0 4px 16px rgba(0,0,0,.3);
+  }
+}
+:root[data-theme="dark"]{
+  --paper:#0E1216; --surface:#161B21; --surface-2:#1E252D; --line:#2C353F;
+  --ink:#E4E8EC; --ink-2:#A2AEBA; --ink-3:#6F7C89;
+  --bolt:#E8874A; --bolt-soft:#2E2018;
+  --fifty:#63A9DE; --fifty-soft:#152431;
+  --ok:#4FB79E; --ok-soft:#13261F;
+  --warn:#C9994A;
+  --shadow:0 1px 2px rgba(0,0,0,.4), 0 4px 16px rgba(0,0,0,.3);
+}
+
+*{box-sizing:border-box}
+html{-webkit-text-size-adjust:100%}
+body{
+  margin:0; background:var(--paper); color:var(--ink);
+  font:15px/1.55 var(--sans); font-variant-numeric:tabular-nums;
+}
+.wrap{max-width:1080px; margin:0 auto; padding:0 20px 80px}
+@media (max-width:640px){ .wrap{padding:0 12px 60px} }
+
+/* ── command bar ───────────────────────────────────────────────────────────── */
+.bar{
+  position:sticky; top:0; z-index:20; background:var(--surface);
+  border-bottom:1px solid var(--line);
+}
+.bar-in{
+  max-width:1080px; margin:0 auto; padding:10px 20px;
+  display:flex; align-items:center; gap:16px; flex-wrap:wrap;
+}
+.brand{display:flex; align-items:baseline; gap:10px; margin-right:auto}
+.brand h1{
+  margin:0; font-size:15px; font-weight:700; letter-spacing:-.01em;
+}
+.freeze{
+  font:600 10px/1 var(--mono); letter-spacing:.09em; text-transform:uppercase;
+  padding:4px 7px; border:1px solid var(--line); border-radius:3px; color:var(--ink-3);
+}
+.bigpct{font:700 15px/1 var(--mono); color:var(--ok)}
+.bigsub{font:11px/1 var(--mono); color:var(--ink-3)}
+.pace{
+  font:600 11px/1 var(--mono); padding:5px 9px; border-radius:3px;
+  border:1px solid var(--line); color:var(--ink-2); white-space:nowrap;
+}
+.pace.good{color:var(--ok); border-color:var(--ok); background:var(--ok-soft)}
+.pace.bad{color:var(--warn); border-color:var(--warn)}
+.iconbtn{
+  font:600 11px/1 var(--mono); padding:6px 9px; border-radius:3px; cursor:pointer;
+  background:var(--surface); border:1px solid var(--line); color:var(--ink-2);
+}
+.iconbtn:hover{border-color:var(--ink-3); color:var(--ink)}
+.iconbtn:focus-visible, .row:focus-visible, .tab:focus-visible{
+  outline:2px solid var(--fifty); outline-offset:2px;
+}
+
+/* ── hero: next action ─────────────────────────────────────────────────────── */
+.hero{margin:22px 0 0; background:var(--surface); border:1px solid var(--line);
+  border-radius:6px; box-shadow:var(--shadow); overflow:hidden; display:flex}
+.hero-rail{width:5px; flex:none; background:var(--ink-3)}
+.hero-rail.bolt{background:var(--bolt)} .hero-rail.fifty{background:var(--fifty)}
+.hero-body{padding:18px 22px; flex:1; min-width:0}
+.eyebrow{
+  font:600 10px/1 var(--mono); letter-spacing:.11em; text-transform:uppercase;
+  color:var(--ink-3); margin:0 0 9px;
+}
+.hero-id{font:700 13px/1 var(--mono); color:var(--ink-3)}
+.hero h2{margin:0; font-size:23px; line-height:1.24; letter-spacing:-.015em; text-wrap:balance}
+.hero-meta{margin:11px 0 0; font-size:13px; color:var(--ink-2)}
+.hero-done{padding:26px 22px; text-align:center; color:var(--ok); font-weight:600}
+
+/* ── stats ─────────────────────────────────────────────────────────────────── */
+.stats{display:grid; grid-template-columns:repeat(auto-fit,minmax(150px,1fr)); gap:10px; margin-top:12px}
+.stat{background:var(--surface); border:1px solid var(--line); border-radius:6px; padding:13px 15px}
+.stat .k{font:600 10px/1 var(--mono); letter-spacing:.09em; text-transform:uppercase; color:var(--ink-3)}
+.stat .v{font:700 22px/1.1 var(--mono); margin-top:8px; letter-spacing:-.02em}
+.stat .v small{font-size:12px; font-weight:600; color:var(--ink-3)}
+.stat.bolt .v{color:var(--bolt)} .stat.fifty .v{color:var(--fifty)}
+
+/* ── discrete progress cells: one cell = one rung, never a fake smooth bar ─── */
+.cells{display:flex; gap:2px; margin-top:9px; height:7px}
+.cell{flex:1; min-width:2px; border-radius:1px; background:var(--surface-2)}
+.cell.on{background:var(--ok)}
+.cell.next{background:var(--ink-3)}
+
+/* ── milestones ────────────────────────────────────────────────────────────── */
+.miles{
+  display:flex; gap:7px; margin-top:12px; padding-bottom:4px;
+  overflow-x:auto; -webkit-overflow-scrolling:touch;
+}
+.mile{
+  flex:none; display:flex; align-items:center; gap:7px; padding:7px 11px;
+  border:1px solid var(--line); border-radius:999px; background:var(--surface);
+  font:600 11px/1 var(--mono); color:var(--ink-3); white-space:nowrap;
+}
+.mile .dot{width:7px; height:7px; border-radius:50%; border:1.5px solid var(--ink-3)}
+.mile.hit{color:var(--ok); border-color:var(--ok); background:var(--ok-soft)}
+.mile.hit .dot{background:var(--ok); border-color:var(--ok)}
+.mile.ship{font-weight:700}
+.mile.ship .dot{border-radius:1px; transform:rotate(45deg)}
+
+/* ── tabs ──────────────────────────────────────────────────────────────────── */
+.tabs{display:flex; gap:2px; margin:26px 0 0; border-bottom:1px solid var(--line)}
+.tab{
+  appearance:none; background:none; border:0; border-bottom:2px solid transparent;
+  padding:9px 14px; cursor:pointer; color:var(--ink-3);
+  font:600 12px/1 var(--mono); letter-spacing:.05em; text-transform:uppercase;
+}
+.tab:hover{color:var(--ink)}
+.tab[aria-selected="true"]{color:var(--ink); border-bottom-color:var(--ink)}
+
+/* ── groups & rows ─────────────────────────────────────────────────────────── */
+.group{
+  margin-top:16px; background:var(--surface); border:1px solid var(--line);
+  border-radius:6px; overflow:hidden;
+}
+.ghead{
+  display:flex; align-items:center; gap:12px; padding:11px 15px;
+  background:var(--surface-2); border-bottom:1px solid var(--line);
+}
+.ghead .gt{font-weight:650; font-size:13.5px; letter-spacing:-.005em}
+.ghead .gs{font:600 11px/1 var(--mono); color:var(--ink-3)}
+.ghead .gn{margin-left:auto; font:700 11px/1 var(--mono); color:var(--ink-3)}
+.ghead .gn.full{color:var(--ok)}
+
+.row{
+  display:flex; align-items:flex-start; gap:11px; width:100%; text-align:left;
+  padding:9px 15px 9px 0; background:none; border:0; border-top:1px solid var(--line);
+  cursor:pointer; color:inherit; font:inherit; position:relative;
+}
+.group .row:first-of-type{border-top:0}
+.row:hover{background:var(--surface-2)}
+.row .rail{width:4px; align-self:stretch; flex:none; background:transparent}
+.row.bolt .rail{background:var(--bolt-soft)} .row.fifty .rail{background:var(--fifty-soft)}
+.row.read .rail{background:repeating-linear-gradient(180deg,var(--line) 0 4px,transparent 4px 9px)}
+.row.done.bolt .rail, .row.done.fifty .rail, .row.done.read .rail{background:var(--ok)}
+.row.read .rtext{color:var(--ink-2)}
+.row.read.done .rtext{color:var(--ink-3)}
+
+.box{
+  flex:none; width:17px; height:17px; margin-top:1px; border-radius:3px;
+  border:1.5px solid var(--ink-3); background:var(--surface);
+  display:grid; place-items:center;
+}
+.row.done .box{background:var(--ok); border-color:var(--ok)}
+.box svg{width:11px; height:11px; stroke:#fff; stroke-width:2.6; fill:none; opacity:0}
+.row.done .box svg{opacity:1}
+
+.rid{
+  flex:none; width:38px; font:700 12px/1.45 var(--mono); color:var(--ink-3);
+}
+.row.done .rid{color:var(--ok)}
+.rtext{flex:1; min-width:0; font-size:14px; line-height:1.45}
+.row.done .rtext{color:var(--ink-3); text-decoration:line-through; text-decoration-thickness:1px}
+.tags{display:flex; gap:5px; flex:none; flex-wrap:wrap; justify-content:flex-end}
+.tag{
+  font:700 9px/1 var(--mono); letter-spacing:.07em; padding:4px 5px;
+  border-radius:2px; border:1px solid var(--line); color:var(--ink-3); white-space:nowrap;
+}
+.tag.build{color:var(--ink); border-color:var(--ink-3)}
+.tag.ship{color:var(--ok); border-color:var(--ok); background:var(--ok-soft)}
+.tag.dep{color:var(--warn); border-color:var(--warn)}
+.tag.link{color:var(--fifty); border-color:var(--fifty)}
+.tag.read,.tag.skim{color:var(--ink-3)}
+.tag.skim{border-style:dashed}
+@media (max-width:640px){
+  .tags{display:none}
+  .rtext{font-size:13.5px}
+}
+
+/* ── reference ─────────────────────────────────────────────────────────────── */
+.ref{margin-top:16px; background:var(--surface); border:1px solid var(--line); border-radius:6px}
+.ref>summary{
+  padding:13px 15px; cursor:pointer; font-weight:650; font-size:13.5px;
+  list-style:none; display:flex; align-items:center; gap:9px;
+}
+.ref>summary::-webkit-details-marker{display:none}
+.ref>summary::before{content:"+"; font:700 14px/1 var(--mono); color:var(--ink-3)}
+.ref[open]>summary::before{content:"–"}
+.ref[open]>summary{border-bottom:1px solid var(--line)}
+.refbody{padding:4px 15px 16px; overflow-x:auto}
+table{border-collapse:collapse; width:100%; font-size:13px; min-width:420px}
+th,td{text-align:left; padding:7px 10px 7px 0; border-bottom:1px solid var(--line); vertical-align:top}
+th{font:600 10px/1 var(--mono); letter-spacing:.08em; text-transform:uppercase; color:var(--ink-3)}
+td code, .refbody code{font:600 12px/1.4 var(--mono); color:var(--fifty)}
+.refbody p{color:var(--ink-2); max-width:65ch}
+.refbody h4{margin:18px 0 6px; font-size:13px}
+.note{
+  margin-top:26px; padding:14px 16px; border-left:3px solid var(--line);
+  color:var(--ink-2); font-size:13px; max-width:68ch;
+}
+.note strong{color:var(--ink)}
+footer{margin-top:34px; padding-top:16px; border-top:1px solid var(--line);
+  display:flex; gap:9px; flex-wrap:wrap; align-items:center;
+  font:11px/1.5 var(--mono); color:var(--ink-3)}
+footer .sp{margin-left:auto}
+@media (prefers-reduced-motion:reduce){ *{transition:none !important; animation:none !important} }
+</style>
+</head>
+<body>
+
+<div class="bar">
+  <div class="bar-in">
+    <div class="brand">
+      <h1>Shader Roadmap</h1>
+      <span class="freeze">Frozen v1.0 · 2026-10-01</span>
+    </div>
+    <div>
+      <div class="bigpct" id="pct">0%</div>
+      <div class="bigsub" id="count">0 / 121</div>
+    </div>
+    <div class="pace" id="pace">—</div>
+    <button class="iconbtn" id="theme" type="button" title="Toggle theme">Theme</button>
+  </div>
+</div>
+
+<div class="wrap">
+
+  <!-- the only question that matters on a given night -->
+  <div class="hero" id="hero"></div>
+
+  <div class="stats">
+    <div class="stat">
+      <div class="k">Overall</div>
+      <div class="v" id="s-all">0<small> / 121</small></div>
+      <div class="cells" id="c-all"></div>
+    </div>
+    <div class="stat bolt">
+      <div class="k">BOLT · illustration</div>
+      <div class="v" id="s-bolt">0<small> / 70</small></div>
+      <div class="cells" id="c-bolt"></div>
+    </div>
+    <div class="stat fifty">
+      <div class="k">The 50 · effects</div>
+      <div class="v" id="s-fifty">0<small> / 50</small></div>
+      <div class="cells" id="c-fifty"></div>
+    </div>
+    <div class="stat">
+      <div class="k">Reading</div>
+      <div class="v" id="s-read">0<small> / 19</small></div>
+      <div class="cells" id="c-read"></div>
+    </div>
+    <div class="stat">
+      <div class="k">Month</div>
+      <div class="v" id="s-month" style="font-size:17px">—</div>
+      <div class="cells" id="c-month"></div>
+    </div>
+  </div>
+
+  <div class="miles" id="miles"></div>
+
+  <div class="tabs" role="tablist">
+    <button class="tab" role="tab" data-view="timeline" aria-selected="true">Timeline</button>
+    <button class="tab" role="tab" data-view="tracks" aria-selected="false">Tracks</button>
+    <button class="tab" role="tab" data-view="reference" aria-selected="false">Reference</button>
+  </div>
+
+  <div id="view"></div>
+
+  <div class="note">
+    <strong>Reading is tracked separately</strong> and is deliberately not counted in the 121, so it never flatters or distorts the pace figure. Book of Shaders ch. 4 is skipped on purpose — it is local <code>glslViewer</code> setup you do not use.<br><br><strong>Progress is stored in this browser.</strong> If you open this file in a different
+    browser, on a different machine, or in Safari (which blocks storage for local files), it
+    will start empty. Use <em>Export</em> to save a JSON snapshot and <em>Import</em> to
+    restore it — that file is the thing worth backing up, not this page.
+  </div>
+
+  <footer>
+    <button class="iconbtn" id="export" type="button">Export</button>
+    <button class="iconbtn" id="import" type="button">Import</button>
+    <button class="iconbtn" id="reset" type="button">Reset</button>
+    <input type="file" id="file" accept="application/json" hidden>
+    <span class="sp">plan.md · shapes-exercises.md · shader-exercises.md · glsl-glossary/</span>
+  </footer>
+</div>
+
+<script>
+"use strict";
+
+/* ── the frozen plan ───────────────────────────────────────────────────────── */
+const START = new Date("2026-10-01T00:00:00");
+const END   = new Date("2027-09-30T00:00:00");
+
+const MONTHS = [
+  ["2026-10","Oct 2026","Week 0 gate, then BOLT Movement 1 — vocabulary"],
+  ["2026-11","Nov 2026","BOLT Movement 2 — the operator algebra"],
+  ["2026-12","Dec 2026","BOLT Movement 3 — one field, many spends"],
+  ["2027-01","Jan 2027","The 50 Tiers 0–1, plus #42 pulled early"],
+  ["2027-02","Feb 2027","BOLT Movement 4 — materials & fake lighting"],
+  ["2027-03","Mar 2027","BOLT Movement 5 — composition & colour"],
+  ["2027-04","Apr 2027","The 50 Tiers 2–3 — domain & noise"],
+  ["2027-05","May 2027","BOLT Movement 6 — rigging by uniform"],
+  ["2027-06","Jun 2027","The 50 Tiers 4–5 — colour & image filters"],
+  ["2027-07","Jul 2027","The 50 Tiers 6–7 — water & the capstones"],
+  ["2027-08","Aug 2027","BOLT Movement 7 — raymarching, first half"],
+  ["2027-09","Sep 2027","BOLT Movement 7 — raymarching, second half"]
+];
+
+/* do-once-tick-both: the unambiguous duplicates from plan.md §3 */
+const LINKS = {
+  S6:"F11", F11:"S6",  S7:"F12",  F12:"S7",   S9:"F13",  F13:"S9",
+  S13:"F10",F10:"S13", S19:"F19", F19:"S19",  S33:"F42", F42:"S33",
+  S45:"F33",F33:"S45", S46:"F31", F31:"S46"
+};
+
+/* id, title, track, group, month, tags */
+const R = [];
+function add(id,t,track,group,month,tags){ R.push({id,t,track,group,month,tags:tags||[]}); }
+
+add("W0","Week 0 gate — one shader rendering through RuntimeShader in Compose","gate","Gate","2026-10",["build"]);
+
+const M1="M1 · Vocabulary → his head", M2="M2 · Operators → his body",
+      M3="M3 · Spends → his eyes",     M4="M4 · Materials → his shell",
+      M5="M5 · Composition → his world", M6="M6 · Rigging → he lives",
+      M7="M7 · The third dimension";
+const B=[
+ ["S1","Triangle, three ways — and why most online SDFs are bounds",M1,"2026-10"],
+ ["S2","Regular polygon, N sides, via angular folding",M1,"2026-10"],
+ ["S3","Star — two alternating radii",M1,"2026-10"],
+ ["S4","Vesica and lens — BOLT's visor",M1,"2026-10"],
+ ["S5","Egg / teardrop — and the Lipschitz condition",M1,"2026-10"],
+ ["S6","Exact box",M1,"2026-10"],
+ ["S7","Rounded box, and per-corner radii — BOLT's head",M1,"2026-10"],
+ ["S8","Arc and pie — angular clamping",M1,"2026-10"],
+ ["S9","Capsule — BOLT's antenna and arms",M1,"2026-10"],
+ ["S10","Heart, moon, cross — and where cheap SDFs break",M1,"2026-10"],
+ ["S11","Horseshoe — composing two techniques",M1,"2026-10"],
+ ["S12","BUILD — BOLT's head. Flat grey, silhouette only",M1,"2026-10","build"],
+ ["S13","Boolean algebra on fields",M2,"2026-11"],
+ ["S14","Smooth minimum — the most important operator here",M2,"2026-11"],
+ ["S15","Smooth max and smooth subtraction",M2,"2026-11"],
+ ["S16","Onion — shells from any shape",M2,"2026-11"],
+ ["S17","Rounding and inflation",M2,"2026-11"],
+ ["S18","Elongation without distorting the field",M2,"2026-11"],
+ ["S19","Mirror and fold — build half of him",M2,"2026-11"],
+ ["S20","Finite repetition — the chest vents",M2,"2026-11"],
+ ["S21","Displacement — roughening a field",M2,"2026-11"],
+ ["S22","BUILD — BOLT's body. Not one visible seam",M2,"2026-11","build"],
+ ["S23","Fill — the baseline spend",M3,"2026-12"],
+ ["S24","Strokes — outer, inner, centred",M3,"2026-12"],
+ ["S25","Glow — and why exp beats 1/d",M3,"2026-12"],
+ ["S26","Drop shadow from the same field, translated",M3,"2026-12"],
+ ["S27","Inner shadow — clipping by multiplication",M3,"2026-12"],
+ ["S28","Gradient along the field",M3,"2026-12"],
+ ["S29","Gradient along a direction",M3,"2026-12"],
+ ["S30","Gradient along the field's normal — accidental lighting",M3,"2026-12","dep"],
+ ["S31","Contour lines — the SDF diagnostic",M3,"2026-12"],
+ ["S32","BUILD — BOLT's eyes. Five spends, one field",M3,"2026-12","build"],
+ ["S33","The fake normal — the line that gives him volume",M4,"2027-02","dep"],
+ ["S34","Lambert",M4,"2027-02"],
+ ["S35","Specular and gloss",M4,"2027-02"],
+ ["S36","Bevel and emboss, derived from first principles",M4,"2027-02"],
+ ["S37","Rim light",M4,"2027-02"],
+ ["S38","Glass — refraction, Fresnel, thickness tint",M4,"2027-02"],
+ ["S39","Metal — a fake environment sampled by the normal",M4,"2027-02"],
+ ["S40","Plastic, matte, paper — materials as parameter sets",M4,"2027-02"],
+ ["S41","Faked ambient occlusion",M4,"2027-02"],
+ ["S42","BUILD — BOLT's shell, plus a 3×3 materials sheet",M4,"2027-02","build"],
+ ["S43","Z-order is statement order",M5,"2027-03"],
+ ["S44","The silhouette test — the only real quality gate",M5,"2027-03"],
+ ["S45","Value before hue",M5,"2027-03"],
+ ["S46","One palette for the whole scene",M5,"2027-03"],
+ ["S47","Depth — atmosphere, scale, overlap",M5,"2027-03"],
+ ["S48","Layout and negative space",M5,"2027-03"],
+ ["S49","The full scene — sky, hills, ground, rocks",M5,"2027-03"],
+ ["S50","BUILD — BOLT v1. Static, composed, lit",M5,"2027-03","build"],
+ ["S51","Parameterize every literal",M6,"2027-05"],
+ ["S52","The pose struct — what he is vs what he's doing",M6,"2027-05"],
+ ["S53","Hierarchical transforms — a 2D skeleton",M6,"2027-05"],
+ ["S54","Easing and springs — overshoot implies mass",M6,"2027-05"],
+ ["S55","Idle — breathing and sway at incommensurate frequencies",M6,"2027-05"],
+ ["S56","Blink — an event, not a cycle",M6,"2027-05"],
+ ["S57","Look-at — the lag is the whole trick",M6,"2027-05"],
+ ["S58","BUILD — BOLT v2. Alive, blinking, watching you",M6,"2027-05","ship"],
+ ["S59","The raymarch loop — sphere tracing",M7,"2027-08"],
+ ["S60","3D primitives — the same formulas, one axis wider",M7,"2027-08"],
+ ["S61","Normals by central differences, in 3D",M7,"2027-08"],
+ ["S62","Lighting in 3D — everything from M4 transfers",M7,"2027-08"],
+ ["S63","Hard shadows — a shadow is a visibility query",M7,"2027-08"],
+ ["S64","Soft shadows — the penumbra trick",M7,"2027-08"],
+ ["S65","Ambient occlusion by marching",M7,"2027-08"],
+ ["S66","The operator algebra in 3D — where smin earns it",M7,"2027-09"],
+ ["S67","Domain repetition in 3D — infinite BOLTs, same cost",M7,"2027-09"],
+ ["S68","Materials and a sky — the vec2(d, id) idiom",M7,"2027-09"],
+ ["S69","The camera — a look-at basis from two cross products",M7,"2027-09"],
+ ["S70","BUILD — BOLT v3. The same robot, raymarched",M7,"2027-09","build"]
+];
+B.forEach(x => add(x[0],x[1],"bolt",x[2],x[3], x[4]?[x[4]]:[]));
+
+const T0="T0 · Coordinates & shaping", T1="T1 · Fields, masks, SDFs",
+      T2="T2 · Domain transforms",     T3="T3 · Noise",
+      T4="T4 · Colour & post",         T5="T5 · Textures & image filters",
+      T6="T6 · Water",                 T7="T7 · Capstones";
+const F=[
+ ["F1","UV as colour",T0,"2027-01"],
+ ["F2","The three normalizations, side by side",T0,"2027-01"],
+ ["F3","step vs smoothstep, proven at 400% zoom",T0,"2027-01"],
+ ["F4","Shaping functions gallery",T0,"2027-01"],
+ ["F5","Time as a uniform",T0,"2027-01"],
+ ["F6","Antialiased edge with a gated fwidth",T0,"2027-01"],
+ ["F7","Circle — return the field, render it three ways",T1,"2027-01"],
+ ["F8","Ring from the same field",T1,"2027-01"],
+ ["F9","The three norms — L1, L2, L∞",T1,"2027-01"],
+ ["F10","Boolean algebra on fields",T1,"2027-01"],
+ ["F11","Exact box, and why min(max(...)) appears",T1,"2027-01"],
+ ["F12","Rounded rectangle, for free",T1,"2027-01"],
+ ["F13","Line segment SDF",T1,"2027-01"],
+ ["F14","N-gon via angular folding",T1,"2027-01"],
+ ["F15","Translate, rotate, scale as domain ops",T2,"2027-04"],
+ ["F16","Polar coordinates — this is the ripple",T2,"2027-04"],
+ ["F17","Tiling with fract",T2,"2027-04"],
+ ["F18","Per-cell randomness",T2,"2027-04"],
+ ["F19","Mirror and kaleidoscope folding",T2,"2027-04"],
+ ["F20","Offset rows — brick layout",T2,"2027-04"],
+ ["F21","Radial repetition",T2,"2027-04"],
+ ["F22","Value noise, 1D",T3,"2027-04"],
+ ["F23","Value noise, 2D",T3,"2027-04"],
+ ["F24","Gradient noise",T3,"2027-04"],
+ ["F25","fBm — fractional Brownian motion",T3,"2027-04"],
+ ["F26","Domain warping — the whole watercolour look",T3,"2027-04"],
+ ["F27","Voronoi / cellular",T3,"2027-04"],
+ ["F28","Flowing noise — three ways to animate it",T3,"2027-04"],
+ ["F29","Turbulence and ridged noise",T3,"2027-04"],
+ ["F30","HSB ↔ RGB",T4,"2027-06"],
+ ["F31","iq's cosine palette — a gradient in 12 numbers",T4,"2027-06"],
+ ["F32","Gradient mapping — same field, different spend",T4,"2027-06"],
+ ["F33","Luminance and gamma",T4,"2027-06"],
+ ["F34","Paper grain",T4,"2027-06"],
+ ["F35","Vignette, posterize, and the tone stack",T4,"2027-06"],
+ ["F36","Sample and display — the photo enters",T5,"2027-06"],
+ ["F37","UV distortion 101 — the whole water effect",T5,"2027-06"],
+ ["F38","Chromatic aberration",T5,"2027-06"],
+ ["F39","Blur — box, Gaussian, then separable",T5,"2027-06"],
+ ["F40","Sobel edge detection",T5,"2027-06"],
+ ["F41","Kuwahara — the painterly one",T5,"2027-06"],
+ ["F42","Height field → normal (pulled early — blocks BOLT S33)",T5,"2027-01","dep"],
+ ["F43","The radial travelling wave",T6,"2027-07"],
+ ["F44","The damped, travelling packet — the honest ripple",T6,"2027-07"],
+ ["F45","Many drops, staggered — height fields add",T6,"2027-07"],
+ ["F46","Refraction — the moment it becomes water",T6,"2027-07"],
+ ["F47","Specular highlight on a fake normal",T6,"2027-07"],
+ ["F48","The full surface — six cheap terms layered",T6,"2027-07"],
+ ["F49","CAPSTONE — watercolour on my photo",T7,"2027-07","build"],
+ ["F50","CAPSTONE — water ripple on my photo, in Compose",T7,"2027-07","ship"]
+];
+F.forEach(x => add(x[0],x[1],"fifty",x[2],x[3], x[4]?[x[4]]:[]));
+
+/* the reading track — plan.md §3, "absorbed" column. Prep, not work:
+   counted separately so it never distorts the 121-rung pace maths. */
+const RD = "Reading · absorbed into rung prep";
+const D = [
+ ["R1","kishimisu — An Introduction to Shader Art Coding (video)","2026-10"],
+ ["R2","iq — Painting a Character with Maths (video). Watch before S1","2026-10"],
+ ["R3","Book of Shaders ch. 5 — Shaping functions","2026-10","skim"],
+ ["R4","Book of Shaders ch. 6 — Colors","2026-11"],
+ ["R5","Book of Shaders ch. 7 — Shapes","2026-12"],
+ ["R6","Book of Shaders ch. 8 — Matrices","2027-01","skim"],
+ ["R7","iq — 2D distance functions","2027-02"],
+ ["R8","iq — smooth minimum","2027-02"],
+ ["R9","iq — palettes","2027-03"],
+ ["R10","Book of Shaders ch. 9 — Patterns","2027-04"],
+ ["R11","Book of Shaders ch. 10 — Random","2027-04"],
+ ["R12","Book of Shaders ch. 11 — Noise. Last chapter — stop here","2027-04"],
+ ["R13","iq — domain warping","2027-04"],
+ ["R14","iq — fBm","2027-04"],
+ ["R15","Maxime Heckel — On Crafting Painterly Shaders","2027-06"],
+ ["R16","Android docs — AGSL and RuntimeShader","2027-07"],
+ ["R17","iq — Raymarching SDFs","2027-08"],
+ ["R18","iq — soft shadows","2027-08"],
+ ["R19","iq — 3D distance functions","2027-09"]
+];
+D.forEach(x => add(x[0],x[1],"read",RD,x[2], x[3]?[x[3],"read"]:["read"]));
+
+const WORK = R.filter(r=>r.track!=="read");
+const READ = R.filter(r=>r.track==="read");
+
+Object.keys(LINKS).forEach(id => { const r = R.find(x=>x.id===id); if(r) r.tags.push("link"); });
+
+const ORDER = {};
+["2026-10","2026-11","2026-12","2027-01","2027-02","2027-03",
+ "2027-04","2027-05","2027-06","2027-07","2027-08","2027-09"].forEach((m,i)=>ORDER[m]=i);
+const SEQ = WORK.slice().sort((a,b)=>{
+  if(ORDER[a.month]!==ORDER[b.month]) return ORDER[a.month]-ORDER[b.month];
+  return R.indexOf(a)-R.indexOf(b);
+});
+
+const MILES = [
+  ["W0","Week 0"],["S12","Head"],["S22","Body"],["S32","Eyes"],["S42","Shell"],
+  ["S50","BOLT v1"],["S58","BOLT v2",1],["F50","The ripple",1],["S70","BOLT v3"]
+];
+
+/* ── state ─────────────────────────────────────────────────────────────────── */
+const KEY = "shader-roadmap-v1";
+let done = new Set();
+try { done = new Set(JSON.parse(localStorage.getItem(KEY) || "[]")); } catch(e){}
+function save(){ try { localStorage.setItem(KEY, JSON.stringify([...done])); } catch(e){} }
+
+function toggle(id){
+  const ids = [id]; if (LINKS[id]) ids.push(LINKS[id]);
+  const turningOn = !done.has(id);
+  ids.forEach(i => turningOn ? done.add(i) : done.delete(i));
+  save(); render();
+}
+
+const byId = id => R.find(r=>r.id===id);
+const label = id => id[0]==="F" ? "#"+id.slice(1) : id;   // W0, S6, R3 as-is; F11 -> #11
+
+/* ── render ────────────────────────────────────────────────────────────────── */
+let view = "timeline";
+
+function cells(el, list){
+  el.innerHTML = "";
+  let markedNext = false;
+  list.forEach(r=>{
+    const d = document.createElement("div");
+    if (done.has(r.id)) { d.className = "cell on"; }
+    else if (!markedNext) { d.className = "cell next"; markedNext = true; }
+    else { d.className = "cell"; }
+    el.appendChild(d);
+  });
+}
+
+function stat(idV, idC, list){
+  const n = list.filter(r=>done.has(r.id)).length;
+  document.getElementById(idV).innerHTML = n + "<small> / " + list.length + "</small>";
+  cells(document.getElementById(idC), list);
+}
+
+function thisMonthKey(){
+  const now = new Date();
+  const k = now.getFullYear() + "-" + String(now.getMonth()+1).padStart(2,"0");
+  if (ORDER[k] !== undefined) return k;
+  return now < START ? "2026-10" : "2027-09";
+}
+
+function rowEl(r){
+  const b = document.createElement("button");
+  b.type = "button";
+  b.className = "row " + r.track + (done.has(r.id) ? " done" : "");
+  b.setAttribute("aria-pressed", done.has(r.id));
+  b.onclick = () => toggle(r.id);
+  const TAGTEXT = { build:"BUILD", ship:"SHIP", dep:"DEP", read:"READ", skim:"SKIM" };
+  const tags = r.tags.map(t=>{
+    const txt = t === "link"
+      ? (LINKS[r.id] ? "LINK " + label(LINKS[r.id]) : "LINK")
+      : (TAGTEXT[t] || t.toUpperCase());
+    return '<span class="tag ' + t + '">' + txt + "</span>";
+  }).join("");
+  b.innerHTML =
+    '<span class="rail"></span>' +
+    '<span class="box"><svg viewBox="0 0 12 12"><polyline points="2,6.4 4.7,9 10,3"/></svg></span>' +
+    '<span class="rid">' + label(r.id) + "</span>" +
+    '<span class="rtext">' + r.t + "</span>" +
+    '<span class="tags">' + tags + "</span>";
+  return b;
+}
+
+function groupEl(title, sub, list){
+  const n = list.filter(r=>done.has(r.id)).length;
+  const g = document.createElement("section");
+  g.className = "group";
+  const h = document.createElement("div");
+  h.className = "ghead";
+  h.innerHTML = '<span class="gt">' + title + "</span>" +
+                '<span class="gs">' + sub + "</span>" +
+                '<span class="gn' + (n===list.length ? " full" : "") + '">' +
+                  n + "/" + list.length + "</span>";
+  g.appendChild(h);
+  list.forEach(r => g.appendChild(rowEl(r)));
+  return g;
+}
+
+function render(){
+  const total = WORK.length, n = WORK.filter(r=>done.has(r.id)).length;
+  document.getElementById("pct").textContent = Math.round(n/total*100) + "%";
+  document.getElementById("count").textContent = n + " / " + total;
+
+  stat("s-all","c-all", SEQ);
+  stat("s-bolt","c-bolt", R.filter(r=>r.track==="bolt"));
+  stat("s-fifty","c-fifty", R.filter(r=>r.track==="fifty"));
+  stat("s-read","c-read", READ);
+
+  const mk = thisMonthKey();
+  const mRungs = R.filter(r=>r.month===mk);
+  const mRow = MONTHS.find(m=>m[0]===mk);
+  document.getElementById("s-month").textContent =
+    mRow[1] + " · " + mRungs.filter(r=>done.has(r.id)).length + "/" + mRungs.length;
+  cells(document.getElementById("c-month"), mRungs);
+
+  /* pace: expected rungs by today across the frozen window */
+  const now = Date.now();
+  const frac = Math.min(1, Math.max(0, (now - START) / (END - START)));
+  const expected = Math.round(frac * total);
+  const diff = n - expected;
+  const p = document.getElementById("pace");
+  if (now < START)      { p.textContent = "not started"; p.className = "pace"; }
+  else if (diff >= 0)   { p.textContent = diff === 0 ? "on schedule" : "+" + diff + " ahead"; p.className = "pace good"; }
+  else                  { p.textContent = (-diff) + " behind"; p.className = "pace bad"; }
+
+  /* next action */
+  const next = SEQ.find(r => !done.has(r.id));
+  const hero = document.getElementById("hero");
+  if (!next) {
+    hero.innerHTML = '<div class="hero-rail"></div><div class="hero-done">' +
+      "All 121 rungs complete. BOLT is alive, the photo ripples, and the robot is solid.</div>";
+  } else {
+    const m = MONTHS.find(x=>x[0]===next.month);
+    hero.innerHTML =
+      '<div class="hero-rail ' + next.track + '"></div>' +
+      '<div class="hero-body">' +
+        '<p class="eyebrow">Next action · scheduled ' + m[1] + "</p>" +
+        '<h2><span class="hero-id">' + label(next.id) + "</span>&nbsp; " + next.t + "</h2>" +
+        '<p class="hero-meta">' + next.group +
+          (next.tags.includes("dep") ? " · requires the gradient trick (#42 / S33) first" : "") +
+        "</p>" +
+      "</div>";
+  }
+
+  /* milestones */
+  const mi = document.getElementById("miles");
+  mi.innerHTML = "";
+  MILES.forEach(([id,name,ship])=>{
+    const d = document.createElement("div");
+    d.className = "mile" + (done.has(id) ? " hit" : "") + (ship ? " ship" : "");
+    d.innerHTML = '<span class="dot"></span>' + name;
+    mi.appendChild(d);
+  });
+
+  /* body */
+  const v = document.getElementById("view");
+  v.innerHTML = "";
+  if (view === "timeline") {
+    MONTHS.forEach(([key,name,desc])=>{
+      const list = R.filter(r=>r.month===key);
+      v.appendChild(groupEl(name, desc, list));
+    });
+  } else if (view === "tracks") {
+    v.appendChild(groupEl("Gate", "before anything else", R.filter(r=>r.track==="gate")));
+    [["bolt",[M1,M2,M3,M4,M5,M6,M7]],["fifty",[T0,T1,T2,T3,T4,T5,T6,T7]]]
+      .forEach(([track,groups])=>{
+        groups.forEach(g=>{
+          const list = R.filter(r=>r.track===track && r.group===g);
+          if (list.length) v.appendChild(groupEl(g, track==="bolt" ? "BOLT" : "The 50", list));
+        });
+      });
+    v.appendChild(groupEl(RD, "ch. 4 skipped — local setup you do not use", READ));
+  } else {
+    v.innerHTML = REFERENCE;
+  }
+}
+
+/* ── reference tab ─────────────────────────────────────────────────────────── */
+const REFERENCE = `
+<details class="ref" open><summary>What you're actually learning</summary><div class="refbody">
+<p><strong>Geometry decides what you draw. Analysis decides whether it looks good.
+Linear algebra just moves things around.</strong></p>
+<table><thead><tr><th>Field</th><th>Share</th><th>Role</th></tr></thead><tbody>
+<tr><td>Real analysis / calculus</td><td>~50%</td><td>functions, smoothness, derivatives, series</td></tr>
+<tr><td>Geometry</td><td>~35%</td><td>distance, metrics, projection, symmetry, convexity</td></tr>
+<tr><td>Linear algebra</td><td>~15%</td><td>vectors as containers, <code>dot</code>, a few 2×2 transforms</td></tr>
+</tbody></table>
+<h4>Every hard shader bug is a calculus bug</h4>
+<table><thead><tr><th>Symptom</th><th>Actual cause</th><th>Rung</th></tr></thead><tbody>
+<tr><td>Jaggy edges</td><td><code>step</code> is discontinuous</td><td>#3</td></tr>
+<tr><td>A crease where two parts meet</td><td><code>min</code> is C⁰ but not C¹</td><td>S14</td></tr>
+<tr><td>A smin blend that warps</td><td>an input broke the Lipschitz condition</td><td>S5, S18</td></tr>
+<tr><td>Muddy glow</td><td>wrong falloff — <code>1/d</code> instead of <code>exp(-kd)</code></td><td>S25</td></tr>
+<tr><td>Shimmer at a distance</td><td>sampling below Nyquist</td><td>#3, S31</td></tr>
+<tr><td>Banded normals · shadow acne</td><td>central-difference step too small for float precision</td><td>S33, S63</td></tr>
+<tr><td>Robotic motion</td><td>no overshoot, so no implied mass</td><td>S54</td></tr>
+</tbody></table>
+<p>The single most reused idea in 121 rungs: <strong>the gradient of a scalar field is a vector
+field, and that vector is a surface normal.</strong> You meet it four times — S30, S33, #42, S61.</p>
+</div></details>
+
+<details class="ref"><summary>Dependencies — what blocks what</summary><div class="refbody">
+<p><strong>The only rule you can break and regret:</strong> do <code>#42</code> before
+<code>S33</code>. It is scheduled into January for exactly this reason. S30 and all of
+Movement 4 are built on it.</p>
+<p>Everything else is soft. The field algebra from BOLT M2 is the one thing that transfers
+wholesale into 3D, which is why M7 can sit nine months later and still make sense.</p>
+<h4>Do once, tick both — 8 linked pairs</h4>
+<table><thead><tr><th>BOLT</th><th>The 50</th><th>Shared</th></tr></thead><tbody>
+<tr><td>S6</td><td>#11</td><td>exact box</td></tr>
+<tr><td>S7</td><td>#12</td><td>rounded box</td></tr>
+<tr><td>S9</td><td>#13</td><td>segment / capsule</td></tr>
+<tr><td>S13</td><td>#10</td><td>boolean field algebra</td></tr>
+<tr><td>S19</td><td>#19</td><td>mirror &amp; fold</td></tr>
+<tr><td>S33</td><td>#42</td><td>gradient → fake normal</td></tr>
+<tr><td>S45</td><td>#33</td><td>luminance &amp; value</td></tr>
+<tr><td>S46</td><td>#31</td><td>cosine palette</td></tr>
+</tbody></table>
+<p>Ticking either one ticks its partner automatically. Other rows in plan.md §3 overlap only
+partially — judge those yourself.</p>
+</div></details>
+
+<details class="ref"><summary>If it slips — cut in this order</summary><div class="refbody">
+<table><thead><tr><th>Order</th><th>Cut</th><th>Cost</th></tr></thead><tbody>
+<tr><td>1st</td><td>BOLT M7 (S59–S70, 3D)</td><td>the reopened scope, not something you asked for · −2 months</td></tr>
+<tr><td>2nd</td><td>The 50 #49 (watercolour)</td><td>the ripple was the goal; watercolour was the comparison · −3 weeks</td></tr>
+<tr><td>3rd</td><td>BOLT M5 (composition)</td><td>BOLT still lives, he just has no world · −1 month</td></tr>
+<tr><td>4th</td><td>Drop to BOLT's fast lane (12 rungs)</td><td>still a living character · −4 months</td></tr>
+</tbody></table>
+<h4>Never cut</h4>
+<p><code>W0</code> the gate · <code>S14</code> smin · <code>S33</code>/<code>#42</code> the
+gradient trick · <code>S44</code> the silhouette test · <code>#46</code> refraction.
+Those five <em>are</em> the plan.</p>
+<p><strong>The minimum viable year:</strong> W0 → BOLT's fast lane → The 50 #36–#48 → #50.
+About 35 rungs and four months, and it still ends with a living character and a rippling photo.</p>
+</div></details>
+
+<details class="ref"><summary>Resuming after a gap</summary><div class="refbody">
+<p>You will put this down for six weeks at some point. When you come back:</p>
+<table><tbody>
+<tr><td>1</td><td>Open this page. The next action is at the top — you don't need to decide anything.</td></tr>
+<tr><td>2</td><td>Skim <code>shader.md</code> §5, "Already Known". It stops anyone re-teaching you the basics.</td></tr>
+<tr><td>3</td><td>Re-run the <em>previous</em> BUILD rung's shader. Fifteen minutes, and it reloads the context better than notes do.</td></tr>
+<tr><td>4</td><td>Don't re-read the book. Don't restart. Don't re-plan.</td></tr>
+</tbody></table>
+<p><strong>The failure mode is re-planning instead of working.</strong> The plan was frozen on
+2026-10-01 for that reason. If a new plan feels necessary, the honest answer is almost always
+"do the next rung tonight."</p>
+</div></details>
+
+<details class="ref"><summary>The files</summary><div class="refbody">
+<table><tbody>
+<tr><td><code>plan.md</code></td><td>the frozen master — timeline, dependencies, maths, decision ledger</td></tr>
+<tr><td><code>roadmap.html</code></td><td>this page — the tracker</td></tr>
+<tr><td><code>shapes-exercises.md</code></td><td>BOLT — 70 rungs, illustration</td></tr>
+<tr><td><code>shader-exercises.md</code></td><td>The 50 — 50 rungs, effects</td></tr>
+<tr><td><code>shader.md</code></td><td>conventions, gotchas, the four-stage house style</td></tr>
+<tr><td><code>glsl-glossary/</code></td><td>45 documented GLSL functions + 4 runnable labs</td></tr>
+</tbody></table>
+</div></details>`;
+
+/* ── wiring ────────────────────────────────────────────────────────────────── */
+document.querySelectorAll(".tab").forEach(t=>{
+  t.onclick = () => {
+    view = t.dataset.view;
+    document.querySelectorAll(".tab").forEach(x=>x.setAttribute("aria-selected", x===t));
+    render();
+  };
+});
+
+document.getElementById("theme").onclick = () => {
+  const cur = document.documentElement.getAttribute("data-theme");
+  const dark = cur ? cur === "dark"
+    : matchMedia("(prefers-color-scheme: dark)").matches;
+  document.documentElement.setAttribute("data-theme", dark ? "light" : "dark");
+};
+
+document.getElementById("export").onclick = () => {
+  const blob = new Blob([JSON.stringify({ plan:"shader-roadmap-v1", saved:new Date().toISOString(), done:[...done] }, null, 2)],
+                        { type:"application/json" });
+  const a = document.createElement("a");
+  a.href = URL.createObjectURL(blob);
+  a.download = "shader-roadmap-progress.json";
+  a.click();
+  URL.revokeObjectURL(a.href);
+};
+
+document.getElementById("import").onclick = () => document.getElementById("file").click();
+document.getElementById("file").onchange = e => {
+  const f = e.target.files[0]; if (!f) return;
+  const fr = new FileReader();
+  fr.onload = () => {
+    try {
+      const d = JSON.parse(fr.result);
+      if (!Array.isArray(d.done)) throw 0;
+      done = new Set(d.done.filter(id => byId(id)));
+      save(); render();
+    } catch(err) {
+      alert("That file isn't a roadmap export. Pick the shader-roadmap-progress.json you exported.");
+    }
+  };
+  fr.readAsText(f);
+  e.target.value = "";
+};
+
+document.getElementById("reset").onclick = () => {
+  if (confirm("Clear all " + done.size + " ticked rungs? Export first if you want them back.")) {
+    done = new Set(); save(); render();
+  }
+};
+
+render();
+</script>
+</body>
+</html>
