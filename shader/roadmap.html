@@ -150,6 +150,64 @@ body{
 .ghead .gn{margin-left:auto; font:700 11px/1 var(--mono); color:var(--ink-3)}
 .ghead .gn.full{color:var(--ok)}
 
+/* ── date ranges: the thing that tells you whether you are late ───────────── */
+.ghead .gdate{
+  font:600 10px/1 var(--mono); letter-spacing:.04em; color:var(--ink-3);
+  border:1px solid var(--line); border-radius:999px; padding:4px 8px; white-space:nowrap;
+}
+.ghead .gdate.now{color:var(--ok); border-color:var(--ok); background:var(--ok-soft)}
+
+/* ── the 52-week grid in the Reference tab ────────────────────────────────── */
+.wkgrid{width:100%; border-collapse:collapse; font:500 12px/1.45 var(--mono)}
+.wkgrid th{
+  text-align:left; padding:6px 9px; border-bottom:1px solid var(--line);
+  font:600 10px/1 var(--mono); letter-spacing:.09em; text-transform:uppercase; color:var(--ink-3);
+}
+.wkgrid td{padding:6px 9px; border-bottom:1px solid var(--line); vertical-align:top}
+.wkgrid td.w{font-weight:700; white-space:nowrap}
+.wkgrid td.d{color:var(--ink-2); white-space:nowrap}
+.wkgrid td.m{color:var(--ink-3); white-space:nowrap}
+.wkgrid tr.past td{opacity:.52}
+.wkgrid tr.now td{background:var(--ok-soft); opacity:1}
+.wkgrid tr.now td.w{color:var(--ok)}
+.wkgrid tr.mstart td{border-top:1px solid var(--line)}
+.wknote{margin:0 0 12px; font-size:13px; color:var(--ink-2)}
+
+/* ── resources: a rung title is not a lesson ──────────────────────────────── */
+.gsrc{
+  display:flex; flex-wrap:wrap; gap:6px 8px; align-items:center;
+  padding:8px 15px; background:var(--surface-2);
+  border-bottom:1px solid var(--line); font:500 11px/1.4 var(--mono);
+}
+.gsrc .lbl{
+  font:600 9px/1 var(--mono); letter-spacing:.09em; text-transform:uppercase;
+  color:var(--ink-3); margin-right:2px;
+}
+.gsrc a, .rsrc a{
+  color:var(--ink-2); text-decoration:none;
+  border-bottom:1px solid var(--line); padding-bottom:1px;
+}
+.gsrc a:hover, .rsrc a:hover{color:var(--ink); border-bottom-color:var(--ink-2)}
+.rsrc{
+  display:flex; flex-wrap:wrap; gap:5px 9px; align-items:baseline;
+  padding:0 15px 9px 56px; font:500 11px/1.4 var(--mono); color:var(--ink-3);
+}
+.rsrc .lbl{font:600 9px/1 var(--mono); letter-spacing:.09em; text-transform:uppercase}
+.srcgrid{width:100%; border-collapse:collapse; font:500 12px/1.5 var(--mono)}
+.srcgrid th{
+  text-align:left; padding:7px 9px; border-bottom:1px solid var(--line);
+  font:600 10px/1 var(--mono); letter-spacing:.09em; text-transform:uppercase; color:var(--ink-3);
+}
+.srcgrid td{padding:7px 9px; border-bottom:1px solid var(--line); vertical-align:top}
+.srcgrid td.g{font-weight:700; white-space:nowrap}
+.srcgrid a{color:var(--ink-2)}
+.srcgrid a:hover{color:var(--ink)}
+.moved{
+  margin:0 0 14px; padding:11px 13px; border-radius:6px;
+  background:var(--ok-soft); border:1px solid var(--ok);
+  font-size:13px; line-height:1.5;
+}
+
 .row{
   display:flex; align-items:flex-start; gap:11px; width:100%; text-align:left;
   padding:9px 15px 9px 0; background:none; border:0; border-top:1px solid var(--line);
@@ -230,7 +288,7 @@ footer .sp{margin-left:auto}
   <div class="bar-in">
     <div class="brand">
       <h1>Shader Roadmap</h1>
-      <span class="freeze">Frozen v1.0 · 2026-10-01</span>
+      <span class="freeze" id="freeze">Frozen v1.0 · 2026-10-01</span>
     </div>
     <div>
       <div class="bigpct" id="pct">0%</div>
@@ -268,6 +326,11 @@ footer .sp{margin-left:auto}
       <div class="cells" id="c-read"></div>
     </div>
     <div class="stat">
+      <div class="k">This week</div>
+      <div class="v" id="s-week" style="font-size:17px">—</div>
+      <div class="cells" id="c-week"></div>
+    </div>
+    <div class="stat">
       <div class="k">Month</div>
       <div class="v" id="s-month" style="font-size:17px">—</div>
       <div class="cells" id="c-month"></div>
@@ -279,6 +342,7 @@ footer .sp{margin-left:auto}
   <div class="tabs" role="tablist">
     <button class="tab" role="tab" data-view="timeline" aria-selected="true">Timeline</button>
     <button class="tab" role="tab" data-view="tracks" aria-selected="false">Tracks</button>
+    <button class="tab" role="tab" data-view="sources" aria-selected="false">Resources</button>
     <button class="tab" role="tab" data-view="reference" aria-selected="false">Reference</button>
   </div>
 
@@ -321,6 +385,46 @@ const MONTHS = [
   ["2027-08","Aug 2027","BOLT Movement 7 — raymarching, first half"],
   ["2027-09","Sep 2027","BOLT Movement 7 — raymarching, second half"]
 ];
+
+/* ── the week grid ─────────────────────────────────────────────────────────────
+   Week 0 is the week the plan was frozen: Thu 1 Oct 2026 → Wed 7 Oct 2026.
+   Every later week is that same Thu→Wed window, +7n. 52 weeks reach 29 Sep 2027.
+   Dates are DERIVED from START, never hand-typed, so they cannot drift. */
+const DAY = 86400000, WEEKMS = 7 * DAY;
+const NWEEKS = 52;
+
+function weekStart(i){ return new Date(START.getTime() + i * WEEKMS); }
+function weekEnd(i){ return new Date(START.getTime() + i * WEEKMS + 6 * DAY); }
+
+/* which week a date falls in; negative before the plan, >=NWEEKS after */
+function weekOf(d){ return Math.floor((d.getTime() - START.getTime()) / WEEKMS); }
+
+/* the live week number, clamped into the plan window for display purposes */
+function currentWeek(){ return Math.min(NWEEKS - 1, Math.max(0, weekOf(new Date()))); }
+
+const MON_SHORT = ["Jan","Feb","Mar","Apr","May","Jun","Jul","Aug","Sep","Oct","Nov","Dec"];
+function dshort(d){ return d.getDate() + " " + MON_SHORT[d.getMonth()]; }
+function dfull(d){ return d.getDate() + " " + MON_SHORT[d.getMonth()] + " " + d.getFullYear(); }
+
+/* "1–7 Oct 2026" / "29 Oct – 4 Nov 2026" / "24 Dec 2026 – 30 Dec 2026" */
+function range(a,b){
+  if (a.getFullYear() !== b.getFullYear()) return dfull(a) + " – " + dfull(b);
+  if (a.getMonth() === b.getMonth())
+    return a.getDate() + "–" + b.getDate() + " " + MON_SHORT[a.getMonth()] + " " + a.getFullYear();
+  return dshort(a) + " – " + dshort(b) + " " + b.getFullYear();
+}
+
+function monthBounds(key){
+  const y = +key.slice(0,4), m = +key.slice(5,7) - 1;
+  return [new Date(y, m, 1), new Date(y, m + 1, 0)];
+}
+
+/* a week belongs to whichever month holds its midpoint (its 4th day) */
+function weekMonth(i){
+  const mid = new Date(START.getTime() + i * WEEKMS + 3 * DAY);
+  const k = mid.getFullYear() + "-" + String(mid.getMonth()+1).padStart(2,"0");
+  return ORDER[k] !== undefined ? k : null;
+}
 
 /* do-once-tick-both: the unambiguous duplicates from plan.md §3 */
 const LINKS = {
@@ -471,31 +575,108 @@ const F=[
 ];
 F.forEach(x => add(x[0],x[1],"fifty",x[2],x[3], x[4]?[x[4]]:[]));
 
+/* ── resources: every link verified 2026-10-04 ──────────────────────────────
+   A rung's title is not a lesson. This is where each one is actually learnt. */
+const SRC = {
+  BOS5:  ["Book of Shaders ch. 5 — Shaping functions","https://thebookofshaders.com/05/"],
+  BOS6:  ["Book of Shaders ch. 6 — Colors","https://thebookofshaders.com/06/"],
+  BOS7:  ["Book of Shaders ch. 7 — Shapes","https://thebookofshaders.com/07/"],
+  BOS8:  ["Book of Shaders ch. 8 — Matrices","https://thebookofshaders.com/08/"],
+  BOS9:  ["Book of Shaders ch. 9 — Patterns","https://thebookofshaders.com/09/"],
+  BOS10: ["Book of Shaders ch. 10 — Random","https://thebookofshaders.com/10/"],
+  BOS11: ["Book of Shaders ch. 11 — Noise","https://thebookofshaders.com/11/"],
+  IQ2D:  ["iq — 2D distance functions","https://iquilezles.org/articles/distfunctions2d/"],
+  IQ3D:  ["iq — 3D distance functions","https://iquilezles.org/articles/distfunctions/"],
+  IQSMIN:["iq — Smooth Minimum Function","https://iquilezles.org/articles/smin/"],
+  IQPAL: ["iq — Procedural Color Palette","https://iquilezles.org/articles/palettes/"],
+  IQWARP:["iq — Domain warping","https://iquilezles.org/articles/warp/"],
+  IQFBM: ["iq — fBM","https://iquilezles.org/articles/fbm/"],
+  IQRM:  ["iq — Raymarching distance fields","https://iquilezles.org/articles/raymarchingdf/"],
+  IQSHAD:["iq — Soft shadows in raymarched SDFs","https://iquilezles.org/articles/rmshadows/"],
+  KISHI: ["kishimisu — An Introduction to Shader Art Coding (video)","https://www.youtube.com/watch?v=f4s1h2YETNY"],
+  IQCHAR:["iq — Painting a Character with Maths (video)","https://www.youtube.com/watch?v=8--5LwHRhjk"],
+  IQSRC: ["↳ that video's shader, live on Shadertoy","https://www.shadertoy.com/view/WsSBzh"],
+  HECKEL:["Maxime Heckel — On Crafting Painterly Shaders","https://blog.maximeheckel.com/posts/on-crafting-painterly-shaders/"],
+  AGSLUSE:["Android — Using AGSL in your app","https://developer.android.com/develop/ui/views/graphics/agsl/using-agsl"],
+  AGSLREF:["Android — AGSL Quick Reference","https://developer.android.com/develop/ui/views/graphics/agsl/agsl-quick-reference"],
+  AGSLDIFF:["Android — Differences between AGSL and GLSL","https://developer.android.com/guide/topics/graphics/agsl/agsl-vs-glsl"],
+  RTSHADER:["Android — RuntimeShader reference","https://developer.android.com/reference/android/graphics/RuntimeShader"],
+  GLOSS: ["your own glsl-glossary/ — 45 functions, 4 runnable labs","./glsl-glossary/"]
+};
+
+/* group → the resources that cover the whole movement / tier */
+const GSRC = {
+  "Gate":        ["AGSLUSE","RTSHADER","AGSLREF","AGSLDIFF","KISHI"],
+  "M1 · Vocabulary → his head":   ["IQ2D","BOS7","IQCHAR","IQSRC","GLOSS"],
+  "M2 · Operators → his body":    ["IQSMIN","IQ2D"],
+  "M3 · Spends → his eyes":       ["BOS6","IQ2D"],
+  "M4 · Materials → his shell":   ["IQ2D","IQSRC"],
+  "M5 · Composition → his world": ["IQPAL","BOS6"],
+  "M6 · Rigging → he lives":      ["GLOSS"],
+  "M7 · The third dimension":     ["IQRM","IQ3D","IQSHAD"],
+  "T0 · Coordinates & shaping":   ["BOS5","GLOSS"],
+  "T1 · Fields, masks, SDFs":     ["IQ2D","BOS7"],
+  "T2 · Domain transforms":       ["BOS8","BOS9"],
+  "T3 · Noise":                   ["BOS10","BOS11","IQFBM","IQWARP"],
+  "T4 · Colour & post":           ["IQPAL","BOS6"],
+  "T5 · Textures & image filters":["HECKEL","IQ2D"],
+  "T6 · Water":                   ["IQ2D"],
+  "T7 · Capstones":               ["AGSLUSE","AGSLREF","HECKEL"]
+};
+
+/* rung → the specific place that rung's lesson lives. Only where it is specific. */
+const RSRC = {
+  W0: ["AGSLUSE","RTSHADER","AGSLDIFF"],
+  S1: ["IQ2D","IQ3D"],   S2: ["IQ2D","BOS7"],  S3: ["IQ2D"],   S4: ["IQ2D"],
+  S6: ["IQ2D"],          S7: ["IQ2D"],         S9: ["IQ2D"],   S10:["IQ2D"],
+  S11:["IQ2D"],          S12:["IQSRC"],
+  S14:["IQSMIN"],        S15:["IQSMIN"],       S16:["IQ2D"],   S17:["IQ2D"],
+  S19:["IQ2D"],
+  S25:["BOS6"],          S28:["IQPAL"],
+  S46:["IQPAL"],         S45:["BOS6"],
+  S59:["IQRM"],          S60:["IQ3D"],         S63:["IQSHAD"], S64:["IQSHAD"],
+  S66:["IQ3D"],          S69:["IQRM"],
+  F25:["IQFBM"],         F26:["IQWARP"],       F31:["IQPAL"],
+  F39:["HECKEL"],        F41:["HECKEL"],       F49:["HECKEL"],
+  F50:["AGSLUSE","RTSHADER"]
+};
+
+/* a rung's resources: its own, else its group's */
+function srcFor(r){
+  const codes = RSRC[r.id] || GSRC[r.group] || [];
+  return codes.map(c=>SRC[c]).filter(Boolean);
+}
+
 /* the reading track — plan.md §3, "absorbed" column. Prep, not work:
    counted separately so it never distorts the 121-rung pace maths. */
 const RD = "Reading · absorbed into rung prep";
 const D = [
- ["R1","kishimisu — An Introduction to Shader Art Coding (video)","2026-10"],
- ["R2","iq — Painting a Character with Maths (video). Watch before S1","2026-10"],
- ["R3","Book of Shaders ch. 5 — Shaping functions","2026-10","skim"],
- ["R4","Book of Shaders ch. 6 — Colors","2026-11"],
- ["R5","Book of Shaders ch. 7 — Shapes","2026-12"],
- ["R6","Book of Shaders ch. 8 — Matrices","2027-01","skim"],
- ["R7","iq — 2D distance functions","2027-02"],
- ["R8","iq — smooth minimum","2027-02"],
- ["R9","iq — palettes","2027-03"],
- ["R10","Book of Shaders ch. 9 — Patterns","2027-04"],
- ["R11","Book of Shaders ch. 10 — Random","2027-04"],
- ["R12","Book of Shaders ch. 11 — Noise. Last chapter — stop here","2027-04"],
- ["R13","iq — domain warping","2027-04"],
- ["R14","iq — fBm","2027-04"],
- ["R15","Maxime Heckel — On Crafting Painterly Shaders","2027-06"],
- ["R16","Android docs — AGSL and RuntimeShader","2027-07"],
- ["R17","iq — Raymarching SDFs","2027-08"],
- ["R18","iq — soft shadows","2027-08"],
- ["R19","iq — 3D distance functions","2027-09"]
+ ["R1","kishimisu — An Introduction to Shader Art Coding (video)","2026-10",null,"KISHI"],
+ ["R2","iq — Painting a Character with Maths (video). Watch before S1","2026-10",null,"IQCHAR"],
+ ["R3","Book of Shaders ch. 5 — Shaping functions","2026-10","skim","BOS5"],
+ /* ⚠ moved 2026-10-04 — see plan.md §7. These three were scheduled months AFTER
+    the rungs that need them. R7 is the reference manual for S1–S11 (weeks 1–3). */
+ ["R7","iq — 2D distance functions. THE manual for Movement 1","2026-10",null,"IQ2D"],
+ ["R5","Book of Shaders ch. 7 — Shapes (polar shapes → polygons)","2026-10",null,"BOS7"],
+ /* moved 2026-10-04: you are reading ch. 6 right now. Reality beats the schedule. */
+ ["R4","Book of Shaders ch. 6 — Colors. ← in progress","2026-10",null,"BOS6"],
+ ["R8","iq — Smooth Minimum Function. Read before S14","2026-11",null,"IQSMIN"],
+ ["R6","Book of Shaders ch. 8 — Matrices","2027-01","skim","BOS8"],
+ ["R9","iq — palettes","2027-03",null,"IQPAL"],
+ ["R10","Book of Shaders ch. 9 — Patterns","2027-04",null,"BOS9"],
+ ["R11","Book of Shaders ch. 10 — Random","2027-04",null,"BOS10"],
+ ["R12","Book of Shaders ch. 11 — Noise. Last chapter — stop here","2027-04",null,"BOS11"],
+ ["R13","iq — domain warping","2027-04",null,"IQWARP"],
+ ["R14","iq — fBm","2027-04",null,"IQFBM"],
+ ["R15","Maxime Heckel — On Crafting Painterly Shaders","2027-06",null,"HECKEL"],
+ ["R16","Android docs — AGSL and RuntimeShader","2027-07",null,"AGSLUSE"],
+ ["R17","iq — Raymarching SDFs","2027-08",null,"IQRM"],
+ ["R18","iq — soft shadows","2027-08",null,"IQSHAD"],
+ ["R19","iq — 3D distance functions","2027-09",null,"IQ3D"]
 ];
 D.forEach(x => add(x[0],x[1],"read",RD,x[2], x[3]?[x[3],"read"]:["read"]));
+/* each reading item IS a resource — wire its link */
+D.forEach(x => { if (x[4]) RSRC[x[0]] = [x[4]]; });
 
 const WORK = R.filter(r=>r.track!=="read");
 const READ = R.filter(r=>r.track==="read");
@@ -509,6 +690,53 @@ const SEQ = WORK.slice().sort((a,b)=>{
   if(ORDER[a.month]!==ORDER[b.month]) return ORDER[a.month]-ORDER[b.month];
   return R.indexOf(a)-R.indexOf(b);
 });
+
+/* ── what each week owes you ───────────────────────────────────────────────────
+   Each month's rungs are split evenly across the weeks whose midpoint lands in
+   that month. Two deliberate exceptions, both straight from plan.md:
+     · Week 0 carries ONLY the gate (W0) — "then stop."
+     · A month's reading sits on that month's first week: it is prep, not work.
+   WEEKPLAN[i] = { work:[rung], read:[rung], month:key } */
+const WEEKPLAN = (() => {
+  const wk = [];
+  for (let i = 0; i < NWEEKS; i++) wk.push({ i, month: weekMonth(i), work: [], read: [] });
+
+  Object.keys(ORDER).forEach(key => {
+    const mine = wk.filter(w => w.month === key);
+    if (!mine.length) return;
+
+    /* reading → first week of the month */
+    mine[0].read = READ.filter(r => r.month === key);
+
+    let work = SEQ.filter(r => r.month === key);
+    let slots = mine;
+
+    /* the gate owns week 0 alone */
+    const gate = work.filter(r => r.track === "gate");
+    if (gate.length && mine[0].i === 0) {
+      mine[0].work = gate;
+      work = work.filter(r => r.track !== "gate");
+      slots = mine.slice(1);
+    }
+    if (!slots.length) { mine[0].work = mine[0].work.concat(work); return; }
+
+    /* even split, remainder to the earliest weeks */
+    const n = slots.length, base = Math.floor(work.length / n), extra = work.length % n;
+    let at = 0;
+    slots.forEach((w, j) => {
+      const take = base + (j < extra ? 1 : 0);
+      w.work = work.slice(at, at + take);
+      at += take;
+    });
+  });
+  return wk;
+})();
+
+/* cumulative work-rung target by the END of week i — the "am I late?" number */
+const WEEKTARGET = WEEKPLAN.reduce((acc, w) => {
+  acc.push((acc[acc.length-1] || 0) + w.work.length);
+  return acc;
+}, []);
 
 const MILES = [
   ["W0","Week 0"],["S12","Head"],["S22","Body"],["S32","Eyes"],["S42","Shell"],
@@ -581,7 +809,7 @@ function rowEl(r){
   return b;
 }
 
-function groupEl(title, sub, list){
+function groupEl(title, sub, list, date, dateNow){
   const n = list.filter(r=>done.has(r.id)).length;
   const g = document.createElement("section");
   g.className = "group";
@@ -590,16 +818,56 @@ function groupEl(title, sub, list){
   h.innerHTML = '<span class="gt">' + title + "</span>" +
                 '<span class="gs">' + sub + "</span>" +
                 '<span class="gn' + (n===list.length ? " full" : "") + '">' +
-                  n + "/" + list.length + "</span>";
+                  n + "/" + list.length + "</span>" +
+                (date ? '<span class="gdate' + (dateNow ? " now" : "") + '">' + date + "</span>" : "");
   g.appendChild(h);
-  list.forEach(r => g.appendChild(rowEl(r)));
+
+  /* the group's resources — one strip, so no rung is an orphan heading.
+     Derived from the rungs present, not from the title: a Timeline group is a
+     MONTH and spans several movements, while a Tracks group is one movement. */
+  const codes = [];
+  (GSRC[title] || []).forEach(c => codes.includes(c) || codes.push(c));
+  list.forEach(r => (GSRC[r.group] || []).forEach(c => codes.includes(c) || codes.push(c)));
+  const gs = codes.map(c=>SRC[c]).filter(Boolean);
+  if (gs.length) {
+    const d = document.createElement("div");
+    d.className = "gsrc";
+    d.innerHTML = '<span class="lbl">Learn from</span>' +
+      gs.map(([t,u]) => '<a href="' + u + '" target="_blank" rel="noopener">' + t + "</a>").join("<span style='opacity:.4'>·</span>");
+    g.appendChild(d);
+  }
+
+  list.forEach(r => {
+    g.appendChild(rowEl(r));
+    const own = RSRC[r.id];
+    if (!own) return;
+    const links = own.map(c=>SRC[c]).filter(Boolean);
+    if (!links.length) return;
+    const d = document.createElement("div");
+    d.className = "rsrc";
+    d.innerHTML = '<span class="lbl">' + label(r.id) + " →</span>" +
+      links.map(([t,u]) => '<a href="' + u + '" target="_blank" rel="noopener">' + t + "</a>").join("");
+    g.appendChild(d);
+  });
   return g;
+}
+
+/* "1 Oct – 31 Oct 2026 · wk 0–4" for a month key */
+function monthStamp(key){
+  const [a,b] = monthBounds(key);
+  const w0 = Math.max(0, weekOf(a)), w1 = Math.min(NWEEKS-1, weekOf(b));
+  const span = w0 === w1 ? "wk " + w0 : "wk " + w0 + "–" + w1;
+  return a.getDate() + " " + MON_SHORT[a.getMonth()] + " – " +
+         b.getDate() + " " + MON_SHORT[b.getMonth()] + " " + b.getFullYear() + " · " + span;
 }
 
 function render(){
   const total = WORK.length, n = WORK.filter(r=>done.has(r.id)).length;
   document.getElementById("pct").textContent = Math.round(n/total*100) + "%";
   document.getElementById("count").textContent = n + " / " + total;
+
+  document.getElementById("freeze").textContent =
+    "Frozen v1.0 · wk 0–51 · " + dshort(START) + " 2026 → " + dfull(weekEnd(NWEEKS-1));
 
   stat("s-all","c-all", SEQ);
   stat("s-bolt","c-bolt", R.filter(r=>r.track==="bolt"));
@@ -612,6 +880,14 @@ function render(){
   document.getElementById("s-month").textContent =
     mRow[1] + " · " + mRungs.filter(r=>done.has(r.id)).length + "/" + mRungs.length;
   cells(document.getElementById("c-month"), mRungs);
+
+  /* this week: the number you check when you've lost the thread */
+  const wi = currentWeek();
+  const wp = WEEKPLAN[wi];
+  const wRungs = wp.work.concat(wp.read);
+  document.getElementById("s-week").textContent =
+    "Week " + wi + " · " + range(weekStart(wi), weekEnd(wi));
+  cells(document.getElementById("c-week"), wRungs);
 
   /* pace: expected rungs by today across the frozen window */
   const now = Date.now();
@@ -631,10 +907,18 @@ function render(){
       "All 121 rungs complete. BOLT is alive, the photo ripples, and the robot is solid.</div>";
   } else {
     const m = MONTHS.find(x=>x[0]===next.month);
+    const dueWk = WEEKPLAN.findIndex(w => w.work.some(r=>r.id===next.id));
+    const nowWk = currentWeek();
+    let when = "scheduled " + m[1];
+    if (dueWk >= 0) {
+      when += " · week " + dueWk + ", " + range(weekStart(dueWk), weekEnd(dueWk));
+      if (dueWk < nowWk) when += " · " + (nowWk - dueWk) + " week" + (nowWk-dueWk>1?"s":"") + " late";
+      else if (dueWk === nowWk) when += " · due this week";
+    }
     hero.innerHTML =
       '<div class="hero-rail ' + next.track + '"></div>' +
       '<div class="hero-body">' +
-        '<p class="eyebrow">Next action · scheduled ' + m[1] + "</p>" +
+        '<p class="eyebrow">Next action · ' + when + "</p>" +
         '<h2><span class="hero-id">' + label(next.id) + "</span>&nbsp; " + next.t + "</h2>" +
         '<p class="hero-meta">' + next.group +
           (next.tags.includes("dep") ? " · requires the gradient trick (#42 / S33) first" : "") +
@@ -656,9 +940,10 @@ function render(){
   const v = document.getElementById("view");
   v.innerHTML = "";
   if (view === "timeline") {
+    const mkNow = thisMonthKey();
     MONTHS.forEach(([key,name,desc])=>{
       const list = R.filter(r=>r.month===key);
-      v.appendChild(groupEl(name, desc, list));
+      v.appendChild(groupEl(name, desc, list, monthStamp(key), key === mkNow));
     });
   } else if (view === "tracks") {
     v.appendChild(groupEl("Gate", "before anything else", R.filter(r=>r.track==="gate")));
@@ -670,9 +955,93 @@ function render(){
         });
       });
     v.appendChild(groupEl(RD, "ch. 4 skipped — local setup you do not use", READ));
+  } else if (view === "sources") {
+    v.innerHTML = sourcesBlock();
   } else {
-    v.innerHTML = REFERENCE;
+    v.innerHTML = REFERENCE + weeksBlock();
   }
+}
+
+/* ── where each rung is actually learnt ────────────────────────────────────── */
+function sourcesBlock(){
+  const rungsFor = g => R.filter(r=>r.group===g).map(r=>label(r.id));
+  let rows = "";
+  Object.keys(GSRC).forEach(g=>{
+    const ids = rungsFor(g);
+    if (!ids.length) return;
+    const links = GSRC[g].map(c=>SRC[c]).filter(Boolean)
+      .map(([t,u]) => '<a href="' + u + '" target="_blank" rel="noopener">' + t + "</a>").join("<br>");
+    rows += "<tr>" +
+      '<td class="g">' + g + "</td>" +
+      '<td class="g" style="font-weight:500;color:var(--ink-3)">' + ids[0] + "–" + ids[ids.length-1] + "</td>" +
+      "<td>" + links + "</td></tr>";
+  });
+
+  let over = "";
+  Object.keys(RSRC).forEach(id=>{
+    const r = byId(id); if (!r || r.track === "read") return;
+    const links = RSRC[id].map(c=>SRC[c]).filter(Boolean)
+      .map(([t,u]) => '<a href="' + u + '" target="_blank" rel="noopener">' + t + "</a>").join(" · ");
+    over += '<tr><td class="g">' + label(id) + "</td><td>" + r.t + "</td><td>" + links + "</td></tr>";
+  });
+
+  return '<p class="moved"><strong>Fixed 2026-10-04.</strong> Three reading items were scheduled ' +
+    '<em>months after</em> the rungs that need them. <code>R7</code> (iq 2D distance functions) is the ' +
+    'reference manual for <code>S1</code>–<code>S11</code> in weeks 1–3, but sat in Feb 2027 — four months late. ' +
+    '<code>R8</code> (smin) sat in Feb while <code>S14</code> runs in week 4. <code>R5</code> (ch. 7, Shapes) ' +
+    'sat in Dec while <code>S2</code> runs in week 1. All three pulled forward. See plan.md §7.</p>' +
+
+    '<details class="ref" open><summary>By movement / tier — covers every rung</summary><div class="refbody">' +
+    '<table class="srcgrid"><thead><tr><th>Group</th><th>Rungs</th><th>Learn from</th></tr></thead>' +
+    "<tbody>" + rows + "</tbody></table></div></details>" +
+
+    '<details class="ref"><summary>Per-rung — where a specific rung has a specific source</summary><div class="refbody">' +
+    '<table class="srcgrid"><thead><tr><th>Rung</th><th>What</th><th>Source</th></tr></thead>' +
+    "<tbody>" + over + "</tbody></table></div></details>" +
+
+    '<details class="ref"><summary>Every link, verified 2026-10-04</summary><div class="refbody">' +
+    '<table class="srcgrid"><tbody>' +
+    Object.keys(SRC).map(c=>'<tr><td class="g">' + c + '</td><td><a href="' + SRC[c][1] +
+      '" target="_blank" rel="noopener">' + SRC[c][0] + "</a></td></tr>").join("") +
+    "</tbody></table></div></details>";
+}
+
+/* ── the 52 weeks, with real dates ─────────────────────────────────────────── */
+function weeksBlock(){
+  const nowWk = weekOf(new Date());
+  let rows = "", lastMonth = null;
+  for (let i = 0; i < NWEEKS; i++){
+    const w = WEEKPLAN[i];
+    const mRow = MONTHS.find(x=>x[0]===w.month);
+    const ids = w.work.map(r=>label(r.id));
+    const reads = w.read.map(r=>label(r.id));
+    const what = (ids.length ? ids.join(" · ") : "—") +
+                 (reads.length ? '  <em style="opacity:.7">+ ' + reads.join(" ") + "</em>" : "");
+    const left = w.work.filter(r=>!done.has(r.id)).length;
+    const cls = [
+      i === nowWk ? "now" : (i < nowWk ? "past" : ""),
+      w.month !== lastMonth ? "mstart" : ""
+    ].filter(Boolean).join(" ");
+    lastMonth = w.month;
+    rows += '<tr class="' + cls + '">' +
+      '<td class="w">' + (i === nowWk ? "▸ " : "") + "wk " + i + "</td>" +
+      '<td class="d">' + range(weekStart(i), weekEnd(i)) + "</td>" +
+      '<td class="m">' + (mRow ? mRow[1] : "—") + "</td>" +
+      "<td>" + what + "</td>" +
+      '<td class="m">' + (w.work.length ? (w.work.length - left) + "/" + w.work.length : "") + "</td>" +
+    "</tr>";
+  }
+  const open = nowWk >= 0 && nowWk < NWEEKS ? " open" : "";
+  return '<details class="ref"' + open + '><summary>The 52 weeks — date ranges</summary><div class="refbody">' +
+    '<p class="wknote"><strong>Week 0 is ' + range(weekStart(0), weekEnd(0)) + '</strong> — the week the plan ' +
+    'was frozen. Every week runs Thursday to Wednesday from there, and week 51 ends ' +
+    dfull(weekEnd(NWEEKS-1)) + '. Dates are computed from that one anchor, so they cannot drift.</p>' +
+    '<p class="wknote">Each month\'s rungs are split evenly across its weeks, so the <em>Due</em> ' +
+    'column is a target, not a rule — the rule is still one rung every 2–3 days. ' +
+    'Reading items are shown in italics and are never counted.</p>' +
+    '<table class="wkgrid"><thead><tr>' +
+      "<th>Week</th><th>Dates</th><th>Month</th><th>Due</th><th>Done</th>" +
+    "</tr></thead><tbody>" + rows + "</tbody></table></div></details>";
 }
 
 /* ── reference tab ─────────────────────────────────────────────────────────── */

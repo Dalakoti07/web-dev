@@ -28,19 +28,29 @@
 | Per-pixel model | ✅ internalised — a shader is a pure function `(pixel) → colour` |
 | GLSL glossary | ✅ **45 of 47 functions** documented in depth, 9 batches, dependency order |
 | `texture2D` / `textureCube` | ⏸ parked until The 50 #36 — needs a sampler the editor won't give |
-| Book of Shaders | 📖 reached **ch. 3**, found it overwhelming. Not a failure — see §7 |
+| Book of Shaders | 📖 **reading ch. 6 (Colors) as of 2026-10-04.** Past the ch. 3 wall — see §7. ch. 4 skipped on purpose |
 | Four-stage house style | ✅ agreed and encoded in the `shader-four-stage` skill |
-| Week 0 gate | ❓ **unconfirmed — has one shader actually run in a Compose app yet?** |
+| Week 0 gate | ✅ **PASSED 2026-10-04.** Red screen *and* gradient rendering through `RuntimeShader` in Compose. Code: `Hello-Compose/coding_math/…/examples/shaders/ShaderGate.kt` |
 | The 50 | 📋 written, 0/50 |
 | BOLT | 📋 written, 0/70 |
 
 **Week 0 is two items, not one** (restoring `shader.md` §2, which this file had trimmed):
-1. **`R1`** — watch the kishimisu video, *An Introduction to Shader Art Coding*.
-2. **`W0`** — get one shader rendering through `RuntimeShader` in a Compose app.
+1. ⬜ **`R1`** — watch the kishimisu video, *An Introduction to Shader Art Coding*. **Still open.**
+2. ✅ **`W0`** — one shader rendering through `RuntimeShader` in a Compose app. **Done 2026-10-04.**
 
-**The one thing blocking the start:** Week 0. Get a single trivial shader (a red screen, then
-a gradient) rendering through `RuntimeShader` in a Compose app. Until that works, the entire
-destination is theoretical. **Do this before S1.** Budget: one sitting.
+**Nothing blocks the start any more.** The destination stopped being theoretical on 2026-10-04:
+AGSL runs on the phone, in the real app, in the real module. **Next rung is `S1`.**
+
+**What the gate actually bought you** — keep these, they are the venue's rules:
+- AGSL types are `float2` / `half4`, **not** `vec2` / `vec4`. Entry is exactly `half4 main(float2 fragCoord)`.
+- **Constructors cannot change a vector's component count.** `half4(someFloat4)` is rejected;
+  `half4(v.rgb, 1.0)` is the documented pattern. This cost one bug before the first run.
+- `RuntimeShader` is API 33+. `coding_math` is `minSdk 24`, so the entry points are version-guarded
+  rather than the module being bumped.
+- Generative shaders go through **`ShaderBrush`**. `RenderEffect.createRuntimeShaderEffect` is for
+  *sampling* an existing layer — that is #50's path and needs `uniform shader`.
+- **AGSL is never validated at build time.** It is a Kotlin string until `RuntimeShader` parses it
+  on-device. `ShaderGateTest` exists for exactly that gap.
 
 ---
 
@@ -48,7 +58,7 @@ destination is theoretical. **Do this before S1.** Budget: one sitting.
 
 | Track | File | What it is | Output |
 |---|---|---|---|
-| 📖 **Reading** | `shader.md` §2 | Book of Shaders ch. 5–11 + four iq articles | understanding |
+| 📖 **Reading** | `shader.md` §2 · links in `roadmap.html` **Resources** tab | Book of Shaders ch. 5–11 + the iq articles + the AGSL docs | understanding |
 | 🎨 **BOLT** | `shapes-exercises.md` | 70 rungs. *Illustration* — invents pixels from nothing | a living character |
 | 💧 **The 50** | `shader-exercises.md` | 50 rungs. *Effects* — bends pixels that exist | a rippling photo |
 
@@ -79,11 +89,19 @@ the manual; the rungs are the work.
 One rung every 2–3 days, ~3 hrs/week. Alternating **by movement**, never by rung — switching
 context every sitting is the realistic burnout path.
 
+> **📅 The week anchor.** **Week 0 = Thu 1 Oct 2026 → Wed 7 Oct 2026**, the week this plan was
+> frozen. Every later week is that window +7n; **week 51 ends Wed 29 Sep 2027**, the target
+> date. The months below map onto weeks as: Oct = wk 0–4 · Nov = wk 4–8 · Dec = wk 9–12 ·
+> Jan = wk 13–17 · Feb = wk 18–21 · Mar = wk 22–25 · Apr = wk 26–29 · May = wk 30–34 ·
+> Jun = wk 35–38 · Jul = wk 39–42 · Aug = wk 43–47 · Sep = wk 48–51.
+> `roadmap.html` computes every date from that single anchor and marks the live week, so the
+> numbering cannot drift. **This is a tracking aid, not a scope change** — see §7, 2026-10-04.
+
 | Month | Primary | Rungs | Reading (absorbed) | Ships |
 |---|---|---|---|---|
-| **Oct 2026** | ⚙️ Week 0 gate, then 🎨 BOLT M1 | S1–S12 | ch. 5 (shaping) | 📸 **BOLT's head** |
-| **Nov 2026** | 🎨 BOLT M2 | S13–S22 | ch. 6 (colour) | 📸 **BOLT's body** |
-| **Dec 2026** | 🎨 BOLT M3 | S23–S32 | ch. 7 (shapes) | 📸 **BOLT's eyes** |
+| **Oct 2026** | ⚙️ Week 0 gate, then 🎨 BOLT M1 | S1–S12 | ch. 5, **ch. 6 ← in progress**, ch. 7, iq 2D SDFs | 📸 **BOLT's head** |
+| **Nov 2026** | 🎨 BOLT M2 | S13–S22 | iq: smooth minimum | 📸 **BOLT's body** |
+| **Dec 2026** | 🎨 BOLT M3 | S23–S32 | — (ch. 7 already read in Oct) | 📸 **BOLT's eyes** |
 | **Jan 2027** | 💧 The 50 T0–T1 *+ #42 early* | #1–#14, #42 | ch. 8 (matrices) | the AA + SDF toolkit |
 | **Feb 2027** | 🎨 BOLT M4 | S33–S42 | iq: 2D SDFs | 📸 **BOLT's shell** |
 | **Mar 2027** | 🎨 BOLT M5 | S43–S50 | iq: palettes | 🎉 **BOLT v1** — static, composed |
@@ -285,6 +303,12 @@ One place. Do not re-litigate these without an explicit reversal entry.
 | 2026-10-01 | Reading made tickable in `roadmap.html` as a separate, uncounted track. **Not a scope change** — it makes §3's existing "Reading" column trackable | maintenance |
 | 2026-10-01 | Week 0 restored to its original two items (kishimisu video + the Compose gate). This file had trimmed the video | correction |
 | 2026-10-01 | Moved `shader/` out of `books/` into the **`web-dev` git repo** — it is now version-controlled. ⚠️ `web-dev` is a **public** GitHub repo | standing |
+| 2026-10-04 | **Week numbers anchored to real dates.** Week 0 = 1–7 Oct 2026; weeks run Thu→Wed; week 51 ends 29 Sep 2027. `roadmap.html` derives all 52 date ranges from that one anchor, shows the live week, and marks the next rung late if its week has passed. **Not a scope change** — the rung list, order and months are untouched; this only makes §3's existing schedule legible against a calendar | maintenance |
+| 2026-10-04 | `shader.md` §2 rewritten: the 9-week reading table demoted from *schedule* to *order* (it already contradicted the absorb-the-reading decision), and its stale "3D is out of scope" line corrected to point at the 2026-10-01 reversal | correction |
+| 2026-10-04 | ⚠️ **REVERSAL — three reading items rescheduled.** The reading track was scheduled by *month theme*, not by *first use*, which put the primary reference **months after** the rungs needing it: `R7` (iq 2D distance functions) sat in Feb 2027 but is the reference manual for `S1`–`S11` in **weeks 1–3** — four months late. `R8` (smin) sat in Feb while `S14` runs in **week 4**. `R5` (ch. 7, Shapes — polar shapes → polygons) sat in Dec while `S2` runs in **week 1**. **`R7` and `R5` → Oct 2026; `R8` → Nov 2026.** Feb 2027 now carries no reading, which is correct: M4's technique comes from `#42`, already done in Jan. No rung moved; no scope changed | **reversal** |
+| 2026-10-04 | ✅ **WEEK 0 GATE PASSED.** Red screen and gradient both confirmed rendering through `RuntimeShader` in a Compose app, in `Hello-Compose/coding_math`. Built as `examples/shaders/ShaderGate.kt` + `ShaderGateTest.kt`, registered as the first two entries of `allAnimations`. The four-stage banners and the single boundary y-flip are in from rung one. `plan.md` §8 listed this under *never cut* — it is now banked | ✅ **done** |
+| 2026-10-04 | **`R4` (Book of Shaders ch. 6 — Colors) pulled Nov 2026 → Oct 2026, week 0.** Not a planning decision: you are *reading it right now*. The tracker records what is true, so the schedule follows reality rather than the reverse. §1's state table updated from "reached ch. 3" to "reading ch. 6" per §9 step 1 | **reversal** |
+| 2026-10-04 | **Every rung now names where it is learnt.** `roadmap.html` gained a `SRC` table of 24 resources (all URLs verified 2026-10-04), a `GSRC` map covering each movement/tier, and a `RSRC` map for rungs with a specific source. A "Learn from" strip renders on every group in both Timeline and Tracks; a new **Resources** tab lists all three mappings. **0 of 140 rows are now an orphan heading** — this was the gap: a rung title like "`S1` Triangle, three ways — and why most online SDFs are bounds" stated a claim and pointed at nothing | maintenance |
 
 ### On ch. 3 of the book
 
@@ -349,7 +373,17 @@ almost always "do S-whatever-is-next tonight."
 
 ## 11. Next action
 
-> **Week 0 gate.** One sitting. Get a solid red screen rendering through `RuntimeShader` in a
-> Compose app on your phone. Then a gradient. Then stop.
+> ~~**Week 0 gate**~~ — ✅ **passed 2026-10-04, three days inside the week 0 window.**
+>
+> **Next: `S1` — Triangle, three ways, and why most online SDFs are bounds.**
+> Venue is `editor.thebookofshaders.com`, not Android — S1–S58 need no device at all.
+> Learn it from [iq's 2D distance functions](https://iquilezles.org/articles/distfunctions2d/);
+> write the three half-planes and the `max` version yourself, then paste iq's exact
+> `sdEquilateralTriangle` and render all three as `fract(d*20.0)` contours.
+> **Done when** you can point at where the bound's contours diverge from the exact one's.
+>
+> Still open in week 0, and both are prep rather than work: `R1` the kishimisu video, and
+> `R2` — iq's *Painting a Character with Maths* plus [its shader](https://www.shadertoy.com/view/WsSBzh).
+> `R2` is worth it before `S1`; it is BOLT's reference build.
 >
 > After that: `shapes-exercises.md` → **S1**.

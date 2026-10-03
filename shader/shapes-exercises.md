@@ -150,7 +150,23 @@ It is also where your **parked shadows thread** finally lands — S63 and S64 ar
 > `float sdX(vec2 p, ...)` returning a **signed field**. Negative inside, zero on the boundary.
 > No `smoothstep`, no colour, no thickness. You will reuse all twelve for the next 58 rungs.
 
+> **📚 Where this movement is learnt** (links verified 2026-10-04):
+> - **[iq — 2D distance functions](https://iquilezles.org/articles/distfunctions2d/)** — *the*
+>   manual for S1–S11. Every entry is labelled `exact`, and that label **is** the S1 lesson.
+> - **[iq — 3D distance functions](https://iquilezles.org/articles/distfunctions/)** — read only
+>   the intro. It splits its list into true SDFs and ones that are explicitly *not*, which is the
+>   bounds-vs-exact distinction stated out loud.
+> - **[Book of Shaders ch. 7 — Shapes](https://thebookofshaders.com/07/)** — the "Polar shapes"
+>   section is the angular-folding trick S2 and S3 use.
+> - **[iq — Painting a Character with Maths](https://www.youtube.com/watch?v=8--5LwHRhjk)** (video)
+>   and **[its shader, live on Shadertoy](https://www.shadertoy.com/view/WsSBzh)** — BOLT's
+>   reference build. Watch before S1; read the source at S12.
+> - **`glsl-glossary/`** — your own notes on `dot`, `max`, `length`, `fract`, `atan`.
+
 ### S1. Triangle, three ways
+- **Source:** [iq — 2D distance functions](https://iquilezles.org/articles/distfunctions2d/) has
+  all three endpoints as *named, labelled* functions: `sdTriangle` (exact), `sdEquilateralTriangle`
+  (exact), `sdTriangleIsosceles` (exact). Write (a) and (b) yourself, then paste (c) and compare.
 - **Do:** (a) intersection of three half-planes via `dot`; (b) `max` of three `dot`s; (c) iq's
   exact equilateral triangle. Render all three as contour lines (`fract(d*20.0)`).
 - **Teaches:** (a) and (b) give a *bound*, not a distance — the contours are wrong away from

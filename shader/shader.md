@@ -22,26 +22,56 @@
 - **1–2 friendly sources max.** Papers only on request.
 - ⚠️ **I run shaders in `editor.thebookofshaders.com`, not locally.** Deliver **one paste-able
   block**. Never a file path, never `glslViewer`. See [[shader-code-must-be-paste-ready]].
+  **Exception, live since 2026-10-04:** AGSL/Compose work has a real venue —
+  `Hello-Compose/coding_math`, module `examples/shaders/`. Rungs S1–S58 and #1–#35 still belong
+  in the browser editor; only AGSL rungs go to the device.
 
 ---
 
 ## 2. The Plan
 
-9 weeks, ~3 hrs/week, concurrent with the applied-math curriculum and the Compose masterclass.
+~3 hrs/week, concurrent with the applied-math curriculum and the Compose masterclass.
 
-| Week | Content |
+### What a week number means
+
+**Week 0 = Thu 1 Oct 2026 → Wed 7 Oct 2026** — the week `plan.md` was frozen. Every week after
+is that same Thu→Wed window, +7 days. Week 51 ends **Wed 29 Sep 2027**, which is the plan's
+target completion. There is exactly one anchor, so the numbering can never drift.
+
+| Week | Dates | Owes |
+|------|-------|------|
+| **0** | 1–7 Oct 2026 | `R1` kishimisu video · `W0` one shader through `RuntimeShader` in Compose (API 33+). **Then stop.** Reading already open: `R4` ch. 6 |
+| 1–3 | 8–28 Oct 2026 | BOLT `S1`–`S12` → his head. Reading: `R2` video, `R3` ch. 5, `R5` ch. 7, **`R7` iq 2D SDFs — the manual for these rungs** |
+| 4–8 | 29 Oct – 2 Dec 2026 | BOLT `S13`–`S22` → his body. Reading: `R8` iq smooth minimum, before `S14` |
+| 9–12 | 3–30 Dec 2026 | BOLT `S23`–`S32` → his eyes. No new reading — ch. 6 and ch. 7 already done |
+| 13–17 | 31 Dec 2026 – 3 Feb 2027 | The 50 `#1`–`#14` + `#42` early. Reading: ch. 8 |
+| 18–47 | 4 Feb – 1 Sep 2027 | the rest, by movement — see `plan.md` §3 and `roadmap.html` |
+| 48–51 | 2–29 Sep 2027 | BOLT `S66`–`S70` → BOLT v3 |
+
+The full week-by-week grid, with every date computed live and the current week marked, is the
+**"The 52 weeks"** block in the Reference tab of [`roadmap.html`](./roadmap.html). That page is
+the tracker; this table is the orientation.
+
+### The reading sequence
+
+The original 9-week reading plan still holds as an *order*, but it is no longer a *schedule* —
+`plan.md` decided on 2026-10-01 to **absorb the reading into rung prep** rather than give it
+separate sittings. Read ch. N as preparation for the rung that needs it.
+
+| Order | Content |
 |------|---------|
-| 0 | kishimisu video + one shader running in Compose via `RuntimeShader` (API 33+) |
-| 1–2 | Book of Shaders ch. 5, 6, 7 |
-| 3–4 | ch. 8, 9 |
-| 5–6 | ch. 10, 11 |
-| 6.5 | Four Inigo Quilez articles |
-| 7–8 | AGSL in Compose. **Capstone: replace a shimmer library with my own ~40-line shader.** |
+| 1 | Book of Shaders ch. 5, 6, 7 |
+| 2 | ch. 8, 9 |
+| 3 | ch. 10, 11 |
+| 4 | Four Inigo Quilez articles |
+| 5 | AGSL in Compose. **Capstone: replace a shimmer library with my own ~40-line shader.** |
 
-**Stop the book at chapter 11.** Everything after is a stub.
+**Stop the book at chapter 11.** Everything after is a stub. **Ch. 4 is skipped on purpose** —
+it is local `glslViewer` setup you do not use.
 
-**Explicitly out of scope:** 3D raymarching / SDF scenes (cut on purpose), and flipping the
-y-axis inside shaders (refused on purpose — convert at the AGSL boundary instead).
+**Explicitly out of scope:** flipping the y-axis inside shaders (refused on purpose — convert at
+the AGSL boundary instead). ⚠️ 3D raymarching / SDF scenes were cut on 2026-09-20 and
+**reversed back into scope on 2026-10-01** — they are now BOLT Movement 7, weeks 43–51.
 
 **Two practice tracks** run alongside the reading track, interleaved by movement:
 
@@ -58,6 +88,27 @@ One hard dependency: **The 50 #42 before BOLT S33.**
 
 - **y-up vs y-down.** GLSL / Book of Shaders / Shadertoy are y-up, origin bottom-left. AGSL and
   Android canvas are y-down, origin top-left. Convert once, at the AGSL boundary.
+  **As built 2026-10-04:** the flip is one labelled line in the DOMAIN stage —
+  `uv.y = 1.0 - uv.y;` — and nothing downstream knows it happened.
+
+### AGSL rules, learned the hard way at the Week 0 gate (2026-10-04)
+
+These are not GLSL. Each one cost something.
+
+- **Types are `float2` / `float3` / `half4`** — never `vec2` / `vec4`.
+- **The entry point is exactly `half4 main(float2 fragCoord)`.** The only supported signature.
+  There is no `gl_FragCoord`; the coordinate is the parameter, and it is in **pixels**.
+- ⚠️ **Constructors cannot change a vector's component count.** `half4(someFloat4)` is rejected
+  — swizzle instead: `half4(v.rgb, 1.0)`. This broke the gradient before it ever ran.
+- **`main` returns PREMULTIPLIED alpha.** Harmless at `a = 1.0`, lethal once anything is
+  translucent — multiply colour additions by `c.a`.
+- **`RuntimeShader` is API 33+.** Guard the entry point; don't raise a module's `minSdk` and
+  break its other examples.
+- **Generative shaders → `ShaderBrush`. Sampling shaders → `RenderEffect.createRuntimeShaderEffect`
+  with a `uniform shader`.** Picking the second for a shader with no input is a dead end.
+- ⚠️ **AGSL is never checked at build time.** It is a Kotlin string until `RuntimeShader` parses
+  it on-device, so `kotlinc` and every JVM unit test will pass a shader full of typos. Keep an
+  instrumented test that constructs each shader — `coding_math` has `ShaderGateTest` for this.
 - **The editor is WebGL1.** `fwidth` needs `GL_OES_standard_derivatives` and may be absent —
   gate it behind `#define USE_FWIDTH 0` with a fixed-width fallback.
 - **`RuntimeShader` is API 33+.** Anything shipping lower needs a fallback path.
@@ -198,7 +249,9 @@ the layering / lerp / rings explainers.
   2026-09-27 (a shadow is a **visibility query**, not an object; soft penumbras come from
   `min(k * closest / travelled)`) is written into those two rungs verbatim.
 - **`texture2D` / `textureCube`** — parked for the AGSL weeks.
-- **Week 0 still unconfirmed** — has one shader actually run in a Compose app yet? Ask.
+- ~~**Week 0**~~ — **closed 2026-10-04.** Yes. Red screen *and* gradient confirmed rendering
+  through `RuntimeShader` in `Hello-Compose/coding_math`. Never ask again; see §3 for the AGSL
+  rules the gate established.
 - **Texture venue** — `editor.thebookofshaders.com` cannot bind a sampler, and Shadertoy has no
   native image upload. Resolved 2026-10-01 with three routes (Shadertoy custom-texture
   extension / the single-file HTML lab in Appendix A / AGSL). `texture2D` stays parked until
